@@ -2,19 +2,7 @@ from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
-
 from alembic import context
-from accounts import models
-
-# Alembic Config объект предоставляет доступ
-# к переменным из файла alembic.ini
-config = context.config
-
-section = config.config_ini_section
-
-fileConfig(config.config_file_name)
-
-target_metadata = [models]
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -48,7 +36,8 @@ def run_migrations_offline():
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url")
+    from decouple import config
+    url = config('DATABASE_URL')
     context.configure(
         url=url,
         target_metadata=target_metadata,
