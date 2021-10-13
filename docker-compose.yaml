@@ -1,0 +1,16 @@
+version: "3"
+services:
+  postgres:
+    image: postgres:11
+    ports:
+      - "5454:5432"
+    environment:
+      - DATABASE_USER=postgresql://postgres:postgres@localhost:5432/db
+  web:
+    build: .
+    volumes:
+      - .:/code
+    ports:
+      - "8010:8010"
+    depends_on:
+      - postgres
