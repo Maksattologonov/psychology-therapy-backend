@@ -18,3 +18,5 @@ typing-extensions==3.10.0.2
 uvicorn==0.15.0
 Wand==0.6.7
 zipp==3.6.0
+passlib[bcrypt]
+python-jose

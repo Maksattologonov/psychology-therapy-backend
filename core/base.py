@@ -1,2 +1,2 @@
 from .database import Base
-from accounts.models import User
+from models.accounts import User

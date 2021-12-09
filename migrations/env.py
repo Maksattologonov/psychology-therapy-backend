@@ -1,14 +1,11 @@
-import sys
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
-
+from decouple import config as conf
 from core.base import Base
-from core.database import SQLALCHEMY_DATABASE_URL
-sys.path = ['', '..'] + sys.path[1:]
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -29,6 +26,13 @@ target_metadata = Base.metadata
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
 
+section = config.config_ini_section
+config.set_section_option(section, "DB_USER", conf("DB_USER"))
+config.set_section_option(section, "DB_PASSWORD", conf("DB_PASSWORD"))
+config.set_section_option(section, "DB_NAME", conf("DB_NAME"))
+config.set_section_option(section, "DB_HOST", conf("DB_HOST"))
+config.set_section_option(section, "DB_PORT", conf("DB_PORT"))
+
 
 def run_migrations_offline():
     """Run migrations in 'offline' mode.
@@ -42,7 +46,7 @@ def run_migrations_offline():
     script output.
 
     """
-    url = SQLALCHEMY_DATABASE_URL
+    url = config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
         target_metadata=target_metadata,
