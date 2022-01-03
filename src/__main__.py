@@ -1,6 +1,6 @@
 import uvicorn
 
-from core.settings import settings
+from core import settings
 
 
 uvicorn.run(
