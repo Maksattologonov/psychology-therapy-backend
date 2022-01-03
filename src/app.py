@@ -1,19 +1,12 @@
 from fastapi import FastAPI
-
 from apis import accounts
+from fastapi.templating import Jinja2Templates
 
-tags_metadata = [
-    {
-        'name': 'auth',
-        'description': 'Авторизация и регистрация',
-    },
-]
 
+templates = Jinja2Templates(directory='common/templates')
 app = FastAPI(
     title='Account',
     description='Psychology therapy',
     version='1.0.0',
-    openapi_tags=tags_metadata,
 )
-
 app.include_router(accounts.router)

@@ -1,6 +1,3 @@
-import smtplib
-import sys
-
 from pydantic import BaseSettings
 from decouple import config
 
