@@ -38,6 +38,7 @@ class UserCreate(BaseModel):
 
 class User(BaseModel):
     id: int
+    email: str
 
     class Config:
         orm_mode = True
@@ -70,3 +71,7 @@ class VerifiedCode(BaseModel):
         if len(str(v)) == 6:
             return v
         raise exception
+
+
+class RefreshToken(BaseModel):
+    token: str

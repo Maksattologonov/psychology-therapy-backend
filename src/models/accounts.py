@@ -3,7 +3,7 @@ from sqlalchemy import Boolean, Column, Integer, String, DateTime, Text, Foreign
 from core.database import Base
 
 
-class   User(Base):
+class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True, unique=True)
@@ -26,4 +26,3 @@ class VerificationCode(Base):
     id = Column(Integer, primary_key=True, index=True, unique=True)
     user = Column(String, ForeignKey("users.email"))
     code = Column(Integer)
-
