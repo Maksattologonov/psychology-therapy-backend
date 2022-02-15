@@ -4,12 +4,11 @@ import smtplib
 import sqlalchemy
 
 from fastapi import HTTPException, Depends
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from email.message import EmailMessage
 from decouple import config
 from jinja2 import Template
 from starlette.responses import JSONResponse
-
 from common.message import raw
 from models.accounts import VerificationCode
 from passlib.hash import bcrypt
@@ -77,7 +76,8 @@ class AuthService:
             'iat': now,
             'nbf': now,
             'exp': now + timedelta(seconds=settings.jwt_expirations),
-            'sub': str(user_data),
+            'sub': str(user_data.id),
+            'user': user_data.dict(),
         }
         token = jwt.encode(
             payload,
@@ -137,10 +137,13 @@ class AuthService:
             raise exception
         return self.create_token(user)
 
-    @classmethod
-    def refresh_token(cls, email: str, password: str) -> Token:
-        user = accounts.User()
-        return cls.create_token(user)
+    def refresh_token(self, token: str) -> Token:
+        user = self.validate_token(token)
+        if user:
+            return self.create_token(user)
+        exception = HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                  detail='User not found')
+        raise exception from None
 
 
 class SendMessageWhenCreateUser:
