@@ -1,4 +1,5 @@
 import re
+from typing import Optional
 
 from fastapi import HTTPException
 from pydantic import BaseModel, validator
@@ -12,13 +13,13 @@ def must_be_manas_account(v: str) -> str:
     raise ValueError("Incorrectly entered email")
 
 
-class BaseUser(BaseModel):
+class BaseUserSchema(BaseModel):
     email: str
     password: str
     _normalize_name = validator('email', allow_reuse=True)(must_be_manas_account)
 
 
-class UserCreate(BaseModel):
+class UserCreateSchema(BaseModel):
     name: str
     last_name: str
     anonymous_name: str
@@ -36,7 +37,7 @@ class UserCreate(BaseModel):
         raise ValueError("Password must be more than 8 characters")
 
 
-class User(BaseModel):
+class UserSchema(BaseModel):
     id: int
     email: str
 
@@ -44,20 +45,20 @@ class User(BaseModel):
         orm_mode = True
 
 
-class Token(BaseModel):
+class TokenSchema(BaseModel):
     access_token: str
     token_type: str = 'bearer'
 
 
-class Email(BaseModel):
-    id: int
+class EmailSchema(BaseModel):
     email: str
     _normalize_name = validator('email', allow_reuse=True)(must_be_manas_account)
-    name: str
-    last_name: str
+
+    class Config:
+        orm_mode = True
 
 
-class VerifiedCode(BaseModel):
+class VerifiedCodeSchema(BaseModel):
     email: str
     _normalize_name = validator('email', allow_reuse=True)(must_be_manas_account)
     code: int
@@ -73,5 +74,37 @@ class VerifiedCode(BaseModel):
         raise exception
 
 
-class RefreshToken(BaseModel):
+class RefreshTokenSchema(BaseModel):
     token: str
+
+
+class UserGetSchema(BaseModel):
+    id: Optional[int]
+    email: Optional[str]
+    name: Optional[str]
+    last_name: Optional[str]
+    anonymous_name: Optional[str]
+
+    class Config:
+        orm_mode = True
+
+
+class UserUpdateSchema(BaseModel):
+    name: Optional[str]
+    last_name: Optional[str]
+    anonymous_name: Optional[str]
+
+    class Config:
+        orm_mode = True
+
+
+class ResetPasswordSchema(BaseModel):
+    code: int
+    new_password: str
+    confirm_password: str
+
+    @validator('new_password', 'confirm_password')
+    def validate_password(cls, v):
+        if len(v) > 8:
+            return v
+        raise ValueError("Password must be more than 8 characters")

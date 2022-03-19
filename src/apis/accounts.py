@@ -1,31 +1,30 @@
-from decouple import config
 from fastapi import Depends, APIRouter
-from fastapi.openapi.models import Response
 from fastapi.security import OAuth2PasswordRequestForm, APIKeyHeader
-from fastapi_mail import ConnectionConfig
 
 from services.accounts import SendMessageWhenCreateUser, oauth2_scheme
 from schemas.accounts import (
-    User,
-    UserCreate,
-    Token, Email, VerifiedCode, BaseUser, RefreshToken
+    UserSchema, UserCreateSchema,
+    TokenSchema, EmailSchema, VerifiedCodeSchema, BaseUserSchema, RefreshTokenSchema, UserUpdateSchema,
+    UserGetSchema, ResetPasswordSchema
 )
 from services.accounts import AuthService, get_current_user
 
 router = APIRouter(
     prefix='/auth',
+    include_in_schema=True,
+    tags=['accounts']
 )
 
 
-@router.post('/sign-up', response_model=Token)
+@router.post('/sign-up', response_model=TokenSchema)
 def sign_up(
-        user_data: UserCreate,
+        user_data: UserCreateSchema,
         service: AuthService = Depends()
 ):
     return service.register_user(user_data)
 
 
-@router.post('/sign-in', response_model=Token)
+@router.post('/sign-in', response_model=TokenSchema)
 def sign_in(
         form_data: OAuth2PasswordRequestForm = Depends(),
         service: AuthService = Depends()
@@ -33,22 +32,33 @@ def sign_in(
     return service.authenticate_user(form_data.username, form_data.password)
 
 
-@router.get('/user', response_model=User)
-def get_user(user: User = Depends(get_current_user)):
-    return user
+@router.get('/user', response_model=UserGetSchema)
+def get_user(user: UserSchema = Depends(get_current_user)):
+    return AuthService.get_user(id=user.id)
 
 
-@router.post('/send-email/')
-def send_email_asynchronous(response_model: Email, service: SendMessageWhenCreateUser = Depends()):
-    return service.send_email_async(email_to=response_model.email, name=response_model.name,
-                                    last_name=response_model.last_name)
+@router.post('/send-email')
+async def send_email_asynchronous(response_model: EmailSchema):
+    return await SendMessageWhenCreateUser.send_email_async(email=response_model.email)
 
 
-@router.post('/verified-account', response_model=Token)
-def verified_account(form_data: VerifiedCode, service: SendMessageWhenCreateUser = Depends()):
+@router.post('/verified-account', response_model=TokenSchema)
+def verified_account(form_data: VerifiedCodeSchema, service: SendMessageWhenCreateUser = Depends()):
     return service.activate_user(email=form_data.email, code=form_data.code)
 
 
-@router.post('/refresh-token', response_model=Token)
-def refresh_token(form_data: RefreshToken, service: AuthService = Depends()):
-    return service.refresh_token(token=form_data.token)
+@router.get('/refresh-token')
+def refresh_token(user: UserSchema = Depends(get_current_user), service: AuthService = Depends()):
+    return service.refresh_token(pk=user.id)
+
+
+@router.patch('/update-profile', response_description="Profile updated")
+def update_profile(form: UserUpdateSchema = Depends(), user: UserSchema = Depends(get_current_user)):
+    return AuthService.update_profile(pk=user.id, name=form.name, last_name=form.last_name,
+                                      anonymous_name=form.anonymous_name)
+
+
+@router.put("/reset-password", response_description="Password successfully changed")
+def reset_password(form: ResetPasswordSchema, user: UserSchema = Depends(get_current_user)):
+    return AuthService.reset_password(user_id=user.id, code=form.code, new_password=form.new_password,
+                                      confirm_password=form.confirm_password)

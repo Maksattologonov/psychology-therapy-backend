@@ -27,10 +27,10 @@ class ForumSchema(BaseModel):
         orm_mode = True
 
 
-class GetForumSchema(BaseModel):
-    id: int
-
-
 class DeleteForumSchema(BaseModel):
     id: int
 
+
+class GetForumSchema(BaseModel):
+    page: int = 0
+    count: int = 5

@@ -15,7 +15,23 @@ class ForumService:
 
     @classmethod
     def get(cls, **filters):
-        return conn.query(cls.model).filter_by(**filters).all()
+        query = conn.query(cls.model).filter_by(**filters).first()
+        if not query:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail='Forum not found'
+            )
+        return query
+
+    @classmethod
+    def filter(cls, **filters):
+        query = conn.query(cls.model).filter_by(**filters).all()
+        if not query:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail='Forums not found'
+            )
+        return query
 
     @classmethod
     def get_with_image(cls):
@@ -28,19 +44,18 @@ class ForumService:
             detail="Forum not found"
         )
         if filters:
-            try:
-                if conn.query(Forum).filter_by(**filters).delete():
-                    conn.commit()
-                    return HTTPException(
-                        status_code=status.HTTP_202_ACCEPTED,
-                        detail="forum successfully deleted"
-                    )
-                raise exception from None
-            except Exception as ex:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail='Something went wrong'
-                ) from None
+            if conn.query(cls.model).filter_by(**filters).delete():
+                conn.commit()
+                return HTTPException(
+                    status_code=status.HTTP_202_ACCEPTED,
+                    detail="forum successfully deleted"
+                )
+            raise exception from None
+            # except Exception as ex:
+            #     raise HTTPException(
+            #         status_code=status.HTTP_400_BAD_REQUEST,
+            #         detail='Something went wrong'
+            #     ) from None
 
     @classmethod
     def create_image(cls, **filters):
@@ -70,8 +85,9 @@ class ForumService:
     def save_image(self, image: UploadFile, forum_id: int) -> str:
         if image:
             url = f'images/forum/{image.filename}'
+            forum = self.get(id=forum_id)
             with open(url, 'wb') as file:
-                self.create_image(forum_id=forum_id, images=file.name)
+                self.create_image(forum_id=forum.id, images=file.name)
                 file.write(image.file.read())
                 file.close()
             return url

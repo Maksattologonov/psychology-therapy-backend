@@ -24,5 +24,5 @@ class VerificationCode(Base):
     __tablename__ = "verification_code"
 
     id = Column(Integer, primary_key=True, index=True, unique=True)
-    user = Column(String, ForeignKey("users.email"))
-    code = Column(Integer)
+    user = Column(String, ForeignKey("users.email", ondelete='CASCADE'))
+    code = Column(Integer, unique=True)

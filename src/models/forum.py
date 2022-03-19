@@ -16,7 +16,7 @@ class Forum(Base):
 class ImagesForum(Base):
     __tablename__ = 'images'
     id = Column(Integer, primary_key=True, index=True, unique=True)
-    forum_id = Column(Integer, ForeignKey('forum.id'))
+    forum_id = Column(Integer, ForeignKey('forum.id', ondelete='CASCADE'))
     images = Column(String(100))
 
 
@@ -34,5 +34,5 @@ class ForumDiscussion(Base):
 class ImagesForumDiscussion(Base):
     __tablename__ = 'images_forum_discussion'
     id = Column(Integer, primary_key=True, index=True, unique=True)
-    forum_id = Column(Integer, ForeignKey('forum_discussion.id'))
+    forum_id = Column(Integer, ForeignKey('forum_discussion.id', ondelete='CASCADE'))
     images = Column(String(100))
