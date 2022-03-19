@@ -11,6 +11,8 @@ from services.forum import ForumService
 
 router = APIRouter(
     prefix='/forum',
+    include_in_schema=True,
+    tags=['forum']
 )
 
 
@@ -30,22 +32,27 @@ def upload_image(forum_id: int, image: UploadFile = File(...), user: User = Depe
 
 @router.get('/get-forum/')
 def get_forum(
-        user_id: int = None,
-        forum_id: int = None,
-        page: int = 0,
-        count: int = 5,
+        forum: GetForumSchema = Depends(),
         service: ForumService = Depends()
 ):
-    instance_slice = get_instance_slice(page, count)
-    if user_id or forum_id:
-        return service.get(is_anonymous=False, user_id=user_id, id=forum_id)
-    return service.get(is_anonymous=False)[instance_slice]
+    instance_slice = get_instance_slice(forum.page, forum.count)
+    return service.filter(is_anonymous=False)[instance_slice]
+
+
+@router.get('/get-my-forum/')
+def get_forum(
+        forum: GetForumSchema = Depends(),
+        user: User = Depends(get_current_user),
+        service: ForumService = Depends()
+):
+    instance_slice = get_instance_slice(forum.page, forum.count)
+    return service.filter(user_id=user.id)[instance_slice]
 
 
 @router.delete('/delete-forum')
 def delete_forum(
-        data: DeleteForumSchema = Depends(),
+        pk: int,
         user: User = Depends(get_current_user),
         service: ForumService = Depends()
 ):
-    return service.delete_forum(id=data.id, user_id=user.id)
+    return service.delete_forum(id=pk, user_id=user.id)

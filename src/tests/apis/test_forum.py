@@ -2,18 +2,28 @@ import ast
 
 import requests
 import json
-from fastapi.testclient import TestClient
-from app import app as web_app
+from app import app
 from unittest import TestCase
-from ..test_db import get_session, override_get_db
+from fastapi.testclient import TestClient
+from core.database import get_session, Session
+from models.forum import Forum
+from ..test_db import override_get_db, TestingSessionLocal
+
+app.dependency_overrides[get_session] = override_get_db
+
+client = TestClient(app)
+conn = TestingSessionLocal()
 
 
 class APITestForum(TestCase):
     def setUp(self) -> None:
-        web_app.dependency_overrides[get_session] = override_get_db
         self.client = requests
         self.url = "http://127.0.0.1:8000/"
         self.payload = 'username=1712.02111@manas.edu.kg&password=strinasdasg'
+        self.forum_query = Forum(title='test title', description='test description', is_anonymous=True)
+        self.create_forum = conn.add(self.forum_query)
+        self.create_forum.commit()
+        print(self.create_forum)
 
     def test_auth(self):
         response = self.client.post(url=self.url + "auth/sign-in", data=self.payload, headers={
@@ -38,8 +48,13 @@ class APITestForum(TestCase):
         self.assertEqual(len(data), len(content))
 
     def test_upload_files(self):
-        with open('images/test_images/Screenshot from 2021-11-09 17-38-05.png') as img:
+        data = b'{"detail":[{"loc":["query","forum_id"],"msg":"field required","type":"value_error.missing"},' \
+               b'{"loc":["body","image"],"msg":"Expected UploadFile, received: <class \'str\'>","type":"value_error"}]}'
+
+        with open('images/test_images/Screenshot from 2021-11-09 17-38-05.png', 'rb') as img:
             token = self.test_auth()
             response = self.client.post(self.url + "forum/upload-image/", data={'image': img, 'forum_id': 1},
                                         headers={"Authorization": "Bearer " + token['access_token']})
-            print(response.content)
+            self.assertEqual(data, response.content)
+            # print(query)
+            # # self.assertEqual(200, response.status_code)
