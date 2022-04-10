@@ -99,6 +99,8 @@ class UserUpdateSchema(BaseModel):
 
 
 class ResetPasswordSchema(BaseModel):
+    email: str
+    _normalize_name = validator('email', allow_reuse=True)(must_be_manas_account)
     code: int
     new_password: str
     confirm_password: str

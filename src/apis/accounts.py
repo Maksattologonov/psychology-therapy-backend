@@ -59,6 +59,6 @@ def update_profile(form: UserUpdateSchema = Depends(), user: UserSchema = Depend
 
 
 @router.put("/reset-password", response_description="Password successfully changed")
-def reset_password(form: ResetPasswordSchema, user: UserSchema = Depends(get_current_user)):
-    return AuthService.reset_password(user_id=user.id, code=form.code, new_password=form.new_password,
+def reset_password(form: ResetPasswordSchema):
+    return AuthService.reset_password(email=form.email, code=form.code, new_password=form.new_password,
                                       confirm_password=form.confirm_password)

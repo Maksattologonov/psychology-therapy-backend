@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from apis.accounts import router
 from apis.forum import router as forum_router
+from images.media import router as media_router
 from fastapi.templating import Jinja2Templates
 
 templates = Jinja2Templates(directory='common/templates')
@@ -14,6 +15,7 @@ def get_application() -> FastAPI:
     )
     application.include_router(router=router)
     application.include_router(router=forum_router)
+    application.include_router(router=media_router)
     return application
 
 

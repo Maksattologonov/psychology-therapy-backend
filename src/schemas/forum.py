@@ -1,30 +1,31 @@
-from typing import List, Optional
+from typing import List, Optional, Type, Any
 
-from fastapi import File, UploadFile
+from fastapi import UploadFile, File
 from pydantic import BaseModel
+from core.database import Session
 
 
 class CreateForumSchema(BaseModel):
     title: str
     description: str
-    is_anonymous: bool
 
     class Config:
         orm_mode = True
-
-
-class ForumImage(BaseModel):
-    image: str
 
 
 class ForumSchema(BaseModel):
     id: int
     title: str
     description: str
-    is_anonymous: bool
 
     class Config:
         orm_mode = True
+
+
+class ImagesForumSchema(BaseModel):
+    id: int
+    forum_id: int
+    images: str
 
 
 class DeleteForumSchema(BaseModel):
@@ -32,5 +33,11 @@ class DeleteForumSchema(BaseModel):
 
 
 class GetForumSchema(BaseModel):
+    count: int = 10
     page: int = 0
-    count: int = 5
+
+
+class UpdateForumSchema(BaseModel):
+    id: int
+    title: Optional[str]
+    description: Optional[str]

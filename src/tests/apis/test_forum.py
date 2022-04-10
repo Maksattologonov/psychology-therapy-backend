@@ -2,17 +2,19 @@ import ast
 
 import requests
 import json
-from app import app
+from app import app as web_app
 from unittest import TestCase
 from fastapi.testclient import TestClient
-from core.database import get_session, Session
+from core.database import get_session, Session, Base
 from models.forum import Forum
-from ..test_db import override_get_db, TestingSessionLocal
+from ..test_db import override_get_db, TestingSessionLocal, engine
 
-app.dependency_overrides[get_session] = override_get_db
+web_app.dependency_overrides[get_session] = override_get_db
+client = TestClient(web_app)
 
-client = TestClient(app)
 conn = TestingSessionLocal()
+Base.metadata.drop_all(bind=engine)
+Base.metadata.create_all(bind=engine)
 
 
 class APITestForum(TestCase):

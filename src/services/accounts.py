@@ -110,8 +110,7 @@ class AuthService:
             )
             self.session.add(user)
             self.session.commit()
-            SendMessageWhenCreateUser.send_email_async(email_to=user_data.email, name=user_data.name,
-                                                       last_name=user_data.last_name)
+            SendMessageWhenCreateUser.send_email_async(email=user_data.email)
             return JSONResponse(
                 status_code=status.HTTP_200_OK,
                 content="The account has been successfully registered, to use please go through verification"
@@ -166,17 +165,20 @@ class AuthService:
             raise HTTPException(detail=ex, status_code=status.HTTP_400_BAD_REQUEST)
 
     @classmethod
-    def reset_password(cls, user_id: int, code: int, new_password: str, confirm_password: str):
-        if conn.query(VerificationCode).filter_by(code=code).first():
-            if new_password == confirm_password:
-                table = accounts.User.__table__
-                stmt = table.update().values(hashed_password=cls.hash_password(new_password))
-                conn.execute(stmt)
-                conn.commit()
-                return HTTPException(status_code=status.HTTP_200_OK,
-                                     detail="Password was successfully change")
+    def reset_password(cls, email: str, code: int, new_password: str, confirm_password: str):
+        if conn.query(accounts.User).filter_by(email=email).first():
+            if conn.query(VerificationCode).filter_by(code=code).first():
+                if new_password == confirm_password:
+                    table = accounts.User.__table__
+                    stmt = table.update().values(hashed_password=cls.hash_password(new_password))
+                    conn.execute(stmt)
+                    conn.commit()
+                    return HTTPException(status_code=status.HTTP_200_OK,
+                                         detail="Password was successfully change")
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                    detail="Passwords do not match")
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                                detail="Passwords do not match")
+                                detail="Wrong code")
         raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Request cannot be empty")
 
 
