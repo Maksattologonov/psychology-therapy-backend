@@ -27,6 +27,9 @@ class ImagesForumSchema(BaseModel):
     forum_id: int
     images: str
 
+    class Config:
+        orm_mode: True
+
 
 class DeleteForumSchema(BaseModel):
     id: int

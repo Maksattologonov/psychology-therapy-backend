@@ -26,10 +26,11 @@ router = APIRouter(
 
 @router.post('/create-forum/', response_model=ForumSchema, status_code=status.HTTP_201_CREATED,
              description="Creating forum")
-def create_forum(user: User = Depends(get_current_user),
-                 service: ForumService = Depends(), data: CreateForumSchema = Depends(),
-                 image: Optional[List[UploadFile]] = File(None)):
-    return service.create(title=data.title, description=data.description, user_id=user.id, image=image)
+async def create_forum(user: User = Depends(get_current_user),
+                       db: Session = Depends(get_session),
+                       service: ForumService = Depends(), data: CreateForumSchema = Depends(),
+                       image: Optional[UploadFile] = File(None)):
+    return await service.create(title=data.title, description=data.description, user_id=user.id, image=image, db=db)
 
 
 @router.get('/get-forum/')
@@ -39,7 +40,7 @@ async def get_forum(
         db: Session = Depends(get_session)
 ):
     instance_slice = get_instance_slice(params.page, params.count)
-    return (await service.filter(db))[instance_slice]
+    return (await service.filter(db=db))[instance_slice]
 
 
 @router.get('/get-my-forum/')
@@ -55,14 +56,14 @@ async def get_forum(
 
 @router.patch('/update-forum')
 async def update_forum(
-        images: Optional[List[UploadFile]] = File(None, description='Only fans'),
+        image: Optional[UploadFile] = File(None, description='Only fans'),
         form: UpdateForumSchema = Depends(),
         user: User = Depends(get_current_user),
         db: Session = Depends(get_session),
         service: ForumService = Depends()
 ):
-    return service.update_forum(user_id=user.id, db=db, forum_id=form.id, title=form.title,
-                                description=form.description, images=images)
+    return (await service.update_forum(user_id=user.id, db=db, forum_id=form.id, title=form.title,
+                                       description=form.description, image=image))
 
 
 @router.delete('/delete-forum')
