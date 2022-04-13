@@ -57,8 +57,8 @@ async def get_forum(
     return (await service.filter(db=db, user_id=user.id))[instance_slice]
 
 
-@router.put('/update-forum', status_code=status.HTTP_200_OK,
-            description="Forum has been updated")
+@router.patch('/update-forum',
+              description="Forum updated endpoint")
 async def update_forum(
         image: UploadFile or None = File(None),
         form: UpdateForumSchema = Depends(),
@@ -66,9 +66,8 @@ async def update_forum(
         db: Session = Depends(get_session),
         service: ForumService = Depends()
 ):
-    if image:
-        return await service.update_forum(user_id=user.id, db=db, forum_id=form.id, title=form.title,
-                                          description=form.description, image=image)
+    return await service.update_forum(user_id=user.id, db=db, forum_id=form.id, title=form.title,
+                                      description=form.description, image=image)
 
 
 @router.delete('/delete-forum')

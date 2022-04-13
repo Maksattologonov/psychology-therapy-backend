@@ -126,26 +126,27 @@ class ForumService:
     async def update_forum(cls, db: Session, forum_id: int, user_id: int, title: str, description: str,
                            image: Optional[UploadFile] = File(None)):
         try:
-            query = db.query(Forum).filter_by(id=forum_id, user_id=user_id)
-            if query:
-                if title:
-                    query.update({"title": title})
-                    db.commit()
-                if description:
-                    query.update({"description": description})
-                    db.commit()
-                if image:
-                    record = db.query(cls.image_model).filter_by(forum_id=query.first().id)
-                    url = f'images/forum/{image.filename}'
-                    with open(url, 'wb') as file:
-                        file.write(image.file.read())
-                        query = cls.get(title=title)
-                        file.close()
-                    record.update({'images': url})
-                    db.commit()
-                return query
+            if user_id:
+                query = db.query(Forum).filter_by(id=forum_id, user_id=user_id)
+                if query:
+                    if title:
+                        query.update({"title": title})
+                        db.commit()
+                    if description:
+                        query.update({"description": description})
+                        db.commit()
+                    if image:
+                        record = db.query(cls.image_model).filter_by(forum_id=query.first().id)
+                        url = f'images/forum/{image.filename}'
+                        with open(url, 'wb') as file:
+                            file.write(image.file.read())
+                            file.close()
+                        record.update({'images': url})
+                        db.commit()
+                    return query.first()
             raise HTTPException(detail="Forum not found", status_code=status.HTTP_404_NOT_FOUND)
         except sqlalchemy.exc.IntegrityError:
             raise HTTPException(detail="Title already exists", status_code=status.HTTP_409_CONFLICT)
         except Exception as ex:
+            print(ex)
             raise HTTPException(detail="Something went wrong", status_code=status.HTTP_400_BAD_REQUEST)
