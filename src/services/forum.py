@@ -70,19 +70,17 @@ class ForumService:
             #     ) from None
 
     @classmethod
-    def create_image(cls, db: Session, **filters):
+    async def create_image(cls, **filters):
         try:
             record = cls.image_model(**filters)
-            db.add(record)
-            db.commit()
+            conn.add(record)
+            conn.commit()
             return record
         except Exception:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Bad credentials"
             )
-        finally:
-            conn.close()
 
     @classmethod
     async def create(cls, db: Session, title: str, description: str, user_id: int,
@@ -96,7 +94,8 @@ class ForumService:
                 )
                 db.add(record)
                 db.commit()
-                await cls.save_image(image=image, title=title, db=db)
+                if image:
+                    await cls.save_image(image=image, title=title)
                 return record
             exception = HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -110,7 +109,7 @@ class ForumService:
             )
 
     @classmethod
-    async def save_image(cls, title: str, db: Session, image: Optional[UploadFile] = File(None)) -> str:
+    async def save_image(cls, title: str, image: Optional[UploadFile] = File(None)):
         if image:
             # for img in image:
             url = f'images/forum/{image.filename}'
@@ -118,24 +117,33 @@ class ForumService:
                 file.write(image.file.read())
                 query = cls.get(title=title)
                 file.close()
-                cls.create_image(images=url, forum_id=query.id, db=db)
+                await cls.create_image(images=url, forum_id=query.id)
             return query
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail="Image saving error")
 
     @classmethod
-    async def update_forum(cls, forum_id: int, user_id: int, db: Session, title: str, description: str,
+    async def update_forum(cls, db: Session, forum_id: int, user_id: int, title: str, description: str,
                            image: Optional[UploadFile] = File(None)):
-        # try:
-        query = db.query(Forum).filter_by(id=forum_id, user_id=user_id)
-        if title:
-            query.update({"title": title})
-            db.commit()
-        if description:
-            query.update({"description": description})
-            db.commit()
-        if image:
-            await cls.save_image(image=image, title=title, db=db)
-        return query
-        # except Exception as ex:
-        #     raise HTTPException(detail="Something went wrong", status_code=status.HTTP_400_BAD_REQUEST)
+        try:
+            query = db.query(Forum).filter_by(id=forum_id, user_id=user_id)
+            if title:
+                query.update({"title": title})
+                db.commit()
+            if description:
+                query.update({"description": description})
+                db.commit()
+            if image:
+                record = db.query(cls.image_model).filter_by(forum_id=query.first().id)
+                url = f'images/forum/{image.filename}'
+                with open(url, 'wb') as file:
+                    file.write(image.file.read())
+                    query = cls.get(title=title)
+                    file.close()
+                record.update({'images': url})
+                db.commit()
+            return query
+        except sqlalchemy.exc.IntegrityError:
+            raise HTTPException(detail="Title already exists", status_code=status.HTTP_409_CONFLICT)
+        except Exception as ex:
+            raise HTTPException(detail="Something went wrong", status_code=status.HTTP_400_BAD_REQUEST)

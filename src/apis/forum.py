@@ -1,6 +1,6 @@
 import json
 import os
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from decouple import config
 from fastapi import APIRouter, File, UploadFile, Depends, Query
@@ -24,12 +24,15 @@ router = APIRouter(
 )
 
 
-@router.post('/create-forum/', response_model=ForumSchema, status_code=status.HTTP_201_CREATED,
+@router.post('/create-forum/', response_model=Union[ForumSchema, ImagesForumSchema],
+             status_code=status.HTTP_201_CREATED,
              description="Creating forum")
-async def create_forum(user: User = Depends(get_current_user),
-                       db: Session = Depends(get_session),
-                       service: ForumService = Depends(), data: CreateForumSchema = Depends(),
-                       image: Optional[UploadFile] = File(None)):
+async def create_forum(
+        data: CreateForumSchema = Depends(),
+        user: User = Depends(get_current_user),
+        db: Session = Depends(get_session),
+        service: ForumService = Depends(),
+        image: UploadFile or None = File(None)):
     return await service.create(title=data.title, description=data.description, user_id=user.id, image=image, db=db)
 
 
@@ -54,16 +57,18 @@ async def get_forum(
     return (await service.filter(db=db, user_id=user.id))[instance_slice]
 
 
-@router.patch('/update-forum')
+@router.put('/update-forum', status_code=status.HTTP_200_OK,
+            description="Forum has been updated")
 async def update_forum(
-        image: Optional[UploadFile] = File(None, description='Only fans'),
+        image: UploadFile or None = File(None),
         form: UpdateForumSchema = Depends(),
         user: User = Depends(get_current_user),
         db: Session = Depends(get_session),
         service: ForumService = Depends()
 ):
-    return (await service.update_forum(user_id=user.id, db=db, forum_id=form.id, title=form.title,
-                                       description=form.description, image=image))
+    if image:
+        return await service.update_forum(user_id=user.id, db=db, forum_id=form.id, title=form.title,
+                                          description=form.description, image=image)
 
 
 @router.delete('/delete-forum')
