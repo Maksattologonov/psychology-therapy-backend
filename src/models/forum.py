@@ -36,6 +36,7 @@ class ForumDiscussion(Base):
     forum_id = Column(Integer, ForeignKey('forum.id'))
     description = Column(Text)
     user_id = Column(Integer, ForeignKey('users.id'))
+    user = relationship("User", lazy='joined')
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 

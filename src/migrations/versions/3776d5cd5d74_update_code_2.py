@@ -1,8 +1,8 @@
-"""update models add asl
+"""update code 2
 
-Revision ID: a510dda4453f
-Revises: b5fdd815ccc5
-Create Date: 2022-04-02 16:11:35.547797
+Revision ID: 3776d5cd5d74
+Revises: 833d4831f6f3
+Create Date: 2022-04-15 15:47:27.416163
 
 """
 from alembic import op
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'a510dda4453f'
-down_revision = 'b5fdd815ccc5'
+revision = '3776d5cd5d74'
+down_revision = '833d4831f6f3'
 branch_labels = None
 depends_on = None
 

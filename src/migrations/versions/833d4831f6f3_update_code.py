@@ -1,8 +1,8 @@
-"""update models add all
+"""update code
 
-Revision ID: cec140634dc1
+Revision ID: 833d4831f6f3
 Revises: 
-Create Date: 2022-03-27 18:35:58.987684
+Create Date: 2022-04-15 15:09:03.632536
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'cec140634dc1'
+revision = '833d4831f6f3'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -44,7 +44,8 @@ def upgrade():
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('title')
     )
     op.create_index(op.f('ix_forum_id'), 'forum', ['id'], unique=True)
     op.create_table('verification_code',
@@ -59,15 +60,13 @@ def upgrade():
     op.create_table('forum_discussion',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('forum_id', sa.Integer(), nullable=True),
-    sa.Column('title', sa.String(length=255), nullable=True),
     sa.Column('description', sa.Text(), nullable=True),
     sa.Column('user_id', sa.Integer(), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
     sa.ForeignKeyConstraint(['forum_id'], ['forum.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('title')
+    sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_forum_discussion_id'), 'forum_discussion', ['id'], unique=True)
     op.create_table('image',

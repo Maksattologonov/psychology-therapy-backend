@@ -1,8 +1,8 @@
-"""second update base model
+"""update code 3
 
-Revision ID: 5bb570222f20
-Revises: 4f8d02ceee97
-Create Date: 2022-04-12 16:51:32.450932
+Revision ID: 453b0f9d16f7
+Revises: 3776d5cd5d74
+Create Date: 2022-04-15 16:00:43.625107
 
 """
 from alembic import op
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '5bb570222f20'
-down_revision = '4f8d02ceee97'
+revision = '453b0f9d16f7'
+down_revision = '3776d5cd5d74'
 branch_labels = None
 depends_on = None
 
