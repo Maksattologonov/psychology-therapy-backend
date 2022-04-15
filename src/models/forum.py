@@ -34,7 +34,6 @@ class ForumDiscussion(Base):
 
     id = Column(Integer, primary_key=True, index=True, unique=True)
     forum_id = Column(Integer, ForeignKey('forum.id'))
-    title = Column(String(255), unique=True)
     description = Column(Text)
     user_id = Column(Integer, ForeignKey('users.id'))
     created_at = Column(DateTime(timezone=True), server_default=func.now())

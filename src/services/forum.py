@@ -10,7 +10,7 @@ from sqlalchemy.orm import joinedload, aliased
 
 from core.database import Session, get_session
 from models.accounts import User
-from models.forum import Forum, ImagesForum, forum
+from models.forum import Forum, ImagesForum, forum, ForumDiscussion
 
 conn = Session()
 
@@ -36,9 +36,10 @@ class ForumService:
         if query:
             for i in query:
                 instance = cls.get_image(db=db, forum_id=i.id)
+                discussions = ForumDiscussionService.filter(db=db, forum_id=i.id)
                 request.append({"id": i.id, "title": i.title, "description": i.description,
                                 "updated_at": i.updated_at, "created_at": i.created_at,
-                                "images": instance})
+                                "images": instance, "comments": discussions})
             return request
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -150,3 +151,52 @@ class ForumService:
         except Exception as ex:
             print(ex)
             raise HTTPException(detail="Something went wrong", status_code=status.HTTP_400_BAD_REQUEST)
+
+
+class ForumDiscussionService:
+    model = ForumDiscussion
+
+    @classmethod
+    def get(cls, db: Session, **filters):
+        try:
+            return db.query(cls.model).filter_by(**filters).first()
+        except Exception as ex:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Discussion not found")
+
+    @classmethod
+    def filter(cls, db: Session, **filters):
+        try:
+            return db.query(cls.model.id, cls.model.description, cls.model.created_at, cls.model.updated_at,
+                            User.anonymous_name,).filter_by(**filters).all()
+        except Exception as ex:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Discussions not found")
+
+    @classmethod
+    async def create(cls, db: Session, forum_id: int, description: str, user_id: int):
+        if description:
+            record = cls.model(
+                forum_id=forum_id,
+                description=description,
+                user_id=user_id,
+            )
+            db.add(record)
+            db.commit()
+            return record
+        exception = HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="could not validate credentials"
+        )
+        raise exception from None
+
+    @classmethod
+    def update(cls, comment_id: int, description: str, user_id: int, db: Session):
+        try:
+            query = db.query(cls.model).filter_by(id=comment_id, user_id=user_id)
+            if query:
+                if description:
+                    query.update({"description": description})
+                    db.commit()
+                return HTTPException(status_code=status.HTTP_200_OK, detail="Update has been successfully")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment not found")
+        except Exception as ex:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User can't edit foreign comment")

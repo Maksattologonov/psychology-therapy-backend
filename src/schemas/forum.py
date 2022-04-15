@@ -44,3 +44,20 @@ class UpdateForumSchema(BaseModel):
     id: int
     title: Optional[str]
     description: Optional[str]
+
+
+class CreateForumDiscussion(BaseModel):
+    forum_id: int
+    description: str
+
+    class Config:
+        orm_mode = True
+
+
+class UpdateForumDiscussion(BaseModel):
+    comment_id: int
+    description: str
+
+    class Config:
+        orm_mode = True
+
