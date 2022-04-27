@@ -47,7 +47,7 @@ async def get_forum(
     return (await service.filter(db=db))[instance_slice]
 
 
-@router.get('/get-own/', description="Get all own forum information")
+@router.get('/get-own', description="Get all own forum information")
 async def get_forum(
         params: GetForumSchema = Depends(),
         user: User = Depends(get_current_user),

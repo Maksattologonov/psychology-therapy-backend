@@ -149,8 +149,8 @@ class AuthService:
 
     @classmethod
     def update_profile(cls, pk: int, name: str, last_name: str, anonymous_name: str):
+        query = conn.query(accounts.User).filter_by(id=pk)
         try:
-            query = conn.query(accounts.User).filter_by(id=pk)
             if name:
                 query.update({"name": name})
                 conn.commit()
@@ -160,9 +160,9 @@ class AuthService:
             if anonymous_name:
                 query.update({"anonymous_name": anonymous_name})
                 conn.commit()
-            return HTTPException(status_code=status.HTTP_201_CREATED, detail="Profile updated")
+            return query.first()
         except Exception as ex:
-            raise HTTPException(detail="User not found", status_code=status.HTTP_400_BAD_REQUEST)
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Parameters cannot be empty")
 
     @classmethod
     def reset_password(cls, email: str, code: int, new_password: str, confirm_password: str):
@@ -256,4 +256,3 @@ class SendMessageWhenCreateUser:
             else:
                 cls.create_record(user=email, code=code)
         return code
-

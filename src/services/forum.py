@@ -112,7 +112,6 @@ class ForumService:
     @classmethod
     async def save_image(cls, title: str, image: Optional[UploadFile] = File(None)):
         if image:
-            # for img in image:
             url = f'images/forum/{image.filename}'
             with open(url, 'wb') as file:
                 file.write(image.file.read())
@@ -149,7 +148,6 @@ class ForumService:
         except sqlalchemy.exc.IntegrityError:
             raise HTTPException(detail="Title already exists", status_code=status.HTTP_409_CONFLICT)
         except Exception as ex:
-            print(ex)
             raise HTTPException(detail="Something went wrong", status_code=status.HTTP_400_BAD_REQUEST)
 
 

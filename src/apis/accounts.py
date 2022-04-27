@@ -1,4 +1,4 @@
-from fastapi import Depends, APIRouter
+from fastapi import Depends, APIRouter, status
 from fastapi.security import OAuth2PasswordRequestForm, APIKeyHeader
 
 from services.accounts import SendMessageWhenCreateUser, oauth2_scheme
@@ -52,7 +52,7 @@ def refresh_token(user: UserSchema = Depends(get_current_user), service: AuthSer
     return service.refresh_token(pk=user.id)
 
 
-@router.patch('/update-profile', response_description="Profile updated")
+@router.patch('/update-profile', response_model=UserGetSchema, response_description="Profile updated", status_code=status.HTTP_201_CREATED)
 def update_profile(form: UserUpdateSchema = Depends(), user: UserSchema = Depends(get_current_user)):
     return AuthService.update_profile(pk=user.id, name=form.name, last_name=form.last_name,
                                       anonymous_name=form.anonymous_name)
