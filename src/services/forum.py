@@ -164,8 +164,9 @@ class ForumDiscussionService:
     @classmethod
     def filter(cls, db: Session, **filters):
         try:
+
             return db.query(cls.model.id, cls.model.description, cls.model.created_at, cls.model.updated_at,
-                            cls.model.forum_id, User.anonymous_name).filter(cls.model.user_id == User.id)\
+                            cls.model.forum_id, cls.model.user_id, User.anonymous_name).filter(cls.model.user_id == User.id)\
                 .filter_by(**filters).all()
         except Exception as ex:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Discussions not found")

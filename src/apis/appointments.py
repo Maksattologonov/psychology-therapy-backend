@@ -15,9 +15,9 @@ router = APIRouter(
 )
 
 
-@router.post("/create", response_model=CreateAppointmentSchema, status_code=status.HTTP_201_CREATED)
+@router.post("/create", status_code=status.HTTP_201_CREATED)
 async def create_appointment(
-        form: CreateAppointmentSchema,
+        form: CreateAppointmentSchema = Depends(),
         db: Session = Depends(get_session),
         user: User = Depends(get_current_user),
         service: AppointmentService = Depends()
@@ -28,12 +28,25 @@ async def create_appointment(
 @router.get("/get")
 async def get_appointment(
         db: Session = Depends(get_session),
+        service: AppointmentService = Depends()
+):
+    return await service.filter(db=db)
+
+
+@router.get("/get-own")
+async def get_appointment(
+        db: Session = Depends(get_session),
         user: User = Depends(get_current_user),
         service: AppointmentService = Depends()
 ):
     return await service.get(db=db, user_id=user.id)
 
 
-@router.get("/delete")
-async def delete(service: AppointmentService = Depends()):
-    return service.get()
+@router.delete("/delete")
+async def delete(
+        pk: int,
+        service: AppointmentService = Depends(),
+        db: Session = Depends(get_session),
+        user: User = Depends(get_current_user)
+):
+    return await service.delete(db=db, user_id=user.id, pk=pk)
