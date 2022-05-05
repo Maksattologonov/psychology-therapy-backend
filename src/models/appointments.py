@@ -9,4 +9,4 @@ class Appointments(Base):
     id = Column(Integer, primary_key=True, index=True, unique=True)
     user_id = Column(Integer, ForeignKey('users.id'))
     description = Column(Text)
-    date = Column(DateTime(timezone=True))
+    date = Column(DateTime(timezone=True), unique=True)

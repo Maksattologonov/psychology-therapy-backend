@@ -1,10 +1,10 @@
-from typing import Optional
+from typing import Optional, Union
 
 from fastapi import APIRouter, Depends, UploadFile, File, status
 
 from core.database import Session, get_session
 from models.accounts import User
-from schemas.appointments import CreateAppointmentSchema
+from schemas.appointments import CreateAppointmentSchema, GetAppointmentSchema
 from services.accounts import get_current_user
 from services.appointments import AppointmentService
 
@@ -15,7 +15,7 @@ router = APIRouter(
 )
 
 
-@router.post("/create", status_code=status.HTTP_201_CREATED)
+@router.post("/create", response_model=GetAppointmentSchema, status_code=status.HTTP_201_CREATED)
 async def create_appointment(
         form: CreateAppointmentSchema = Depends(),
         db: Session = Depends(get_session),

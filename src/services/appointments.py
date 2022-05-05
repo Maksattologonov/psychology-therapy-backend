@@ -16,23 +16,24 @@ class AppointmentService:
     @classmethod
     async def create(cls, db: Session, description: str, user_id: User.id, date: datetime.datetime):
         try:
-            record = cls.model(
-                description=description,
-                user_id=user_id,
-                date=date
-            )
-            db.add(record)
-            db.commit()
-            return record
+            if description and date:
+                record = cls.model(
+                    description=description,
+                    user_id=user_id,
+                    date=date
+                )
+                db.add(record)
+                db.commit()
+                return record
         except sqlalchemy.exc.IntegrityError:
             raise HTTPException(
                 status_code=status.HTTP_406_NOT_ACCEPTABLE,
-                detail="Title already exists"
+                detail="There is already an entry for this date"
             )
 
     @classmethod
     async def get(cls, db: Session, **filters):
-        query = db.query(cls.model).filter_by(**filters).first()
+        query = db.query(cls.model).filter_by(**filters).all()
         if query:
             return query
         raise HTTPException(status_code=status.HTTP_200_OK, detail="Appointment not found")
