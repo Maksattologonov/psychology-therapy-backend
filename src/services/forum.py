@@ -4,11 +4,9 @@ import sys
 from typing import Optional, List
 
 import sqlalchemy
-from fastapi import HTTPException, status, UploadFile, File, Depends, Response
+from fastapi import HTTPException, status, UploadFile, File, Depends
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload, aliased
-from fastapi.responses import JSONResponse
-from fastapi.encoders import jsonable_encoder
 
 from core.database import Session, get_session
 from models.accounts import User
@@ -39,9 +37,9 @@ class ForumService:
             for i in query:
                 instance = cls.get_image(db=db, forum_id=i.id)
                 discussions = ForumDiscussionService.filter(db=db, forum_id=i.id)
-                request.append({"forum":{"id": i.id, "title": i.title, "description": i.description,
-                                "updated_at": i.updated_at, "created_at": i.created_at,
-                                "images": instance, "comments": discussions}})
+                request.append({"id": i.id, "title": i.title, "description": i.description,
+                                          "updated_at": i.updated_at, "created_at": i.created_at,
+                                          "images": instance, "comments": discussions})
             return request
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
