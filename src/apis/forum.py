@@ -44,7 +44,7 @@ async def get_forum(
         db: Session = Depends(get_session)
 ):
     instance_slice = get_instance_slice(params.page, params.count)
-    return (await service.filter(db=db))[instance_slice]
+    return await service.filter(db=db)
 
 
 @router.get('/get-own', description="Get all own forum information")

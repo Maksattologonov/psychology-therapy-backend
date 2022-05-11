@@ -5,6 +5,8 @@ from typing import Optional, List
 
 import sqlalchemy
 from fastapi import HTTPException, status, UploadFile, File, Depends
+from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload, aliased
 
@@ -38,9 +40,9 @@ class ForumService:
                 instance = cls.get_image(db=db, forum_id=i.id)
                 discussions = ForumDiscussionService.filter(db=db, forum_id=i.id)
                 request.append({"id": i.id, "title": i.title, "description": i.description,
-                                          "updated_at": i.updated_at, "created_at": i.created_at,
-                                          "images": instance, "comments": discussions})
-            return request
+                                "updated_at": i.updated_at, "created_at": i.created_at,
+                                "images": instance, "comments": discussions})
+            return JSONResponse(content={"forum": jsonable_encoder(request)})
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail='Forums not found'
