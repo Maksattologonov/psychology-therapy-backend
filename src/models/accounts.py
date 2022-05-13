@@ -18,6 +18,7 @@ class User(Base):
     is_employee = Column(Boolean, default=False)
     is_superuser = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)
+    is_blocked = Column(Boolean, default=False)
 
 
 class VerificationCode(Base):

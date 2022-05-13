@@ -44,7 +44,7 @@ async def get_forum(
         db: Session = Depends(get_session)
 ):
     instance_slice = get_instance_slice(params.page, params.count)
-    return await service.filter(db=db)
+    return await service.filter(db=db, params=params)
 
 
 @router.get('/get-own', description="Get all own forum information")
@@ -54,8 +54,7 @@ async def get_forum(
         db: Session = Depends(get_session),
         service: ForumService = Depends()
 ):
-    instance_slice = get_instance_slice(params.page, params.count)
-    return (await service.filter(db=db, user_id=user.id))[instance_slice]
+    return await service.filter(db=db, user_id=user.id, params=params)
 
 
 @router.patch('/update',
@@ -97,7 +96,7 @@ async def create_discussion(
         db: Session = Depends(get_session),
         service: ForumDiscussionService = Depends()
 ):
-    return await service.create(forum_id=form.forum_id, description=form.description, db=db, user_id=user.id)
+    return await service.create(forum_id=form.forum_id, description=form.description, db=db, user=user)
 
 
 @router.patch("/update-comment")

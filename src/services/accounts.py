@@ -9,7 +9,7 @@ from decouple import config
 from jinja2 import Template
 from starlette.responses import JSONResponse
 from common.message import raw
-from models.accounts import VerificationCode
+from models.accounts import VerificationCode, User
 from passlib.hash import bcrypt, des_crypt
 from fastapi import status
 from pydantic import ValidationError
@@ -129,7 +129,7 @@ class AuthService:
         user = (
             self.session
                 .query(accounts.User)
-                .filter(accounts.User.email == email)
+                .filter(accounts.User.email == email, accounts.User.is_blocked == False)
                 .first()
         )
         if not user:
@@ -180,6 +180,30 @@ class AuthService:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                                 detail="Wrong code")
         raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Request cannot be empty")
+
+    @classmethod
+    def block_user(cls, user: UserSchema, db: Session, blocking_user: int):
+        if user.is_employee and not user.is_blocked:
+            b_user = db.query(User).filter_by(id=blocking_user)
+            if b_user.first() and not b_user.first().is_blocked:
+                b_user.update({"is_blocked": True})
+                db.commit()
+                return JSONResponse(status_code=status.HTTP_200_OK, content=f"Пользователь заблокирован")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Пользователь не найден")
+        else:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="У Вас не полномочий для удаления")
+
+    @classmethod
+    def unblock_user(cls, user: UserSchema, db: Session, blocking_user: int):
+        if user.is_employee and not user.is_blocked:
+            b_user = db.query(User).filter_by(id=blocking_user)
+            if b_user.first() and b_user.first().is_blocked:
+                b_user.update({"is_blocked": False})
+                db.commit()
+                return JSONResponse(status_code=status.HTTP_200_OK, content=f"Пользователь разблокирован")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Пользователь не найден")
+        else:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="У Вас не полномочий для разблокировки")
 
 
 class SendMessageWhenCreateUser:

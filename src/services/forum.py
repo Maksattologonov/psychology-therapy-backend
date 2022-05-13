@@ -1,18 +1,18 @@
-import ast
-import json
-import sys
-from typing import Optional, List
-
 import sqlalchemy
+
+from typing import Optional, List
 from fastapi import HTTPException, status, UploadFile, File, Depends
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload, aliased
 
+from common.common import get_instance_slice
 from core.database import Session, get_session
 from models.accounts import User
 from models.forum import Forum, ImagesForum, forum, ForumDiscussion
+from schemas.forum import GetForumSchema
+from common.common import bad_exception
 
 conn = Session()
 
@@ -32,9 +32,10 @@ class ForumService:
         return query
 
     @classmethod
-    async def filter(cls, db: Session, **filters):
+    async def filter(cls, db: Session, params: GetForumSchema, **filters):
         query = db.query(cls.model).filter_by(**filters).all()
         request = []
+        instance_slice = get_instance_slice(params.page, params.count)
         if query:
             for i in query:
                 instance = cls.get_image(db=db, forum_id=i.id)
@@ -42,7 +43,7 @@ class ForumService:
                 request.append({"id": i.id, "title": i.title, "description": i.description,
                                 "updated_at": i.updated_at, "created_at": i.created_at,
                                 "images": instance, "comments": discussions})
-            return JSONResponse(content={"forum": jsonable_encoder(request)})
+            return JSONResponse(content={"forum": jsonable_encoder(request[instance_slice])})
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail='Forums not found'
@@ -175,31 +176,34 @@ class ForumDiscussionService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Discussions not found")
 
     @classmethod
-    async def create(cls, db: Session, forum_id: int, description: str, user_id: int):
-        if description:
-            record = cls.model(
-                forum_id=forum_id,
-                description=description,
-                user_id=user_id,
-            )
-            db.add(record)
-            db.commit()
-            return record
-        exception = HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="could not validate credentials"
-        )
-        raise exception from None
+    async def create(cls, db: Session, forum_id: int, description: str, user: User):
+        if not user.is_blocked:
+            if description:
+                record = cls.model(
+                    forum_id=forum_id,
+                    description=description,
+                    user_id=user.id,
+                )
+                db.add(record)
+                db.commit()
+                return record
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="could not validate credentials")
+        else:
+            raise bad_exception
 
     @classmethod
     def update(cls, comment_id: int, description: str, user_id: int, db: Session):
         try:
             query = db.query(cls.model).filter_by(id=comment_id, user_id=user_id)
             if query:
-                if description:
-                    query.update({"description": description})
-                    db.commit()
-                return HTTPException(status_code=status.HTTP_200_OK, detail="Update has been successfully")
+                if not query.first().is_blocked:
+                    if description:
+                        query.update({"description": description})
+                        db.commit()
+                    return HTTPException(status_code=status.HTTP_200_OK, detail="Update has been successfully")
+                raise bad_exception
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment not found")
         except Exception as ex:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User can't edit foreign comment")

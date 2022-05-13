@@ -40,6 +40,8 @@ class UserCreateSchema(BaseModel):
 class UserSchema(BaseModel):
     id: int
     email: str
+    is_blocked: bool
+    is_employee: bool
 
     class Config:
         orm_mode = True
