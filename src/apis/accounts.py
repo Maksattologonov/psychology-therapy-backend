@@ -35,8 +35,9 @@ def sign_in(
 
 
 @router.get('/user', response_model=UserGetSchema)
-def get_user(user: UserSchema = Depends(get_current_user)):
-    return AuthService.get_user(id=user.id)
+def get_user(user: UserSchema = Depends(get_current_user),
+             service: AuthService = Depends()):
+    return service.get_user(id=user.id)
 
 
 @router.post('/send-email')

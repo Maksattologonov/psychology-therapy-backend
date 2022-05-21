@@ -43,7 +43,7 @@ class ForumService:
                 request.append({"id": i.id, "title": i.title, "description": i.description,
                                 "updated_at": i.updated_at, "created_at": i.created_at,
                                 "images": instance, "comments": discussions})
-            return JSONResponse(content={"forum": jsonable_encoder(request[instance_slice])})
+            return JSONResponse(content=jsonable_encoder(request[instance_slice]))
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail='Forums not found'
