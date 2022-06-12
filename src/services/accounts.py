@@ -98,18 +98,33 @@ class AuthService:
             detail='duplicate key value violates unique constraint',
         )
         try:
-            user = accounts.User(
-                name=user_data.name,
-                last_name=user_data.last_name,
-                anonymous_name=user_data.anonymous_name,
-                email=user_data.email,
-                hashed_password=self.hash_password(user_data.password),
-                created_at=datetime.utcnow(),
-                updated_at=datetime.utcnow(),
-                is_active=False
-            )
-            self.session.add(user)
-            self.session.commit()
+            if user_data.is_employee:
+                user = accounts.User(
+                    name=user_data.name,
+                    last_name=user_data.last_name,
+                    is_employee=user_data.is_employee,
+                    is_student=False,
+                    email=user_data.email,
+                    hashed_password=self.hash_password(user_data.password),
+                    created_at=datetime.utcnow(),
+                    updated_at=datetime.utcnow(),
+                    is_active=False
+                )
+                self.session.add(user)
+                self.session.commit()
+            else:
+                user = accounts.User(
+                    name=user_data.name,
+                    last_name=user_data.last_name,
+                    is_employee=user_data.is_employee,
+                    email=user_data.email,
+                    hashed_password=self.hash_password(user_data.password),
+                    created_at=datetime.utcnow(),
+                    updated_at=datetime.utcnow(),
+                    is_active=False
+                )
+                self.session.add(user)
+                self.session.commit()
             SendMessageWhenCreateUser.send_email_async(email=user_data.email)
             return JSONResponse(
                 status_code=status.HTTP_200_OK,
