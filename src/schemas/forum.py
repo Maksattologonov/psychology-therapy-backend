@@ -5,7 +5,29 @@ from pydantic import BaseModel
 from core.database import Session
 
 
+class CatalogIdSchema(BaseModel):
+    id: int
+    class Config:
+        orm_mode = True
+
+
+class CatalogSchema(BaseModel):
+    id: int
+    title: str
+
+    class Config:
+        orm_mode = True
+
+
+class CreateCatalogSchema(BaseModel):
+    title: str
+
+    class Config:
+        orm_mode = True
+
+
 class CreateForumSchema(BaseModel):
+    catalog_id: int
     title: str
     description: str
 
@@ -42,6 +64,7 @@ class GetForumSchema(BaseModel):
 
 class UpdateForumSchema(BaseModel):
     id: int
+    catalog_id: Optional[int]
     title: Optional[str]
     description: Optional[str]
 

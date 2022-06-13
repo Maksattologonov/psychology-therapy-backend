@@ -13,19 +13,38 @@ from core.database import Session, get_session
 from models.accounts import User
 from models.forum import Forum, ImagesForum
 from schemas.forum import CreateForumSchema, ForumSchema, GetForumSchema, DeleteForumSchema, ImagesForumSchema, \
-    UpdateForumSchema, CreateForumDiscussion, UpdateForumDiscussion
+    UpdateForumSchema, CreateForumDiscussion, UpdateForumDiscussion, CatalogSchema, CreateCatalogSchema
 from services.accounts import get_current_user
-from services.forum import ForumService, ForumDiscussionService
+from services.forum import ForumService, ForumDiscussionService, CatalogService
 
 path = config("BASE_URL")
 router = APIRouter(
-    prefix='/forum',
+    prefix='/catalog',
     include_in_schema=True,
-    tags=['forum']
+    tags=['catalog']
 )
 
 
-@router.post('/create/', response_model=Union[ForumSchema, ImagesForumSchema],
+@router.post('/create/', response_model=CatalogSchema, status_code=status.HTTP_201_CREATED,
+             description="Create Catalog")
+async def create_schema(
+        data: CreateCatalogSchema = Depends(),
+        user: User = Depends(get_current_user),
+        db: Session = Depends(get_session),
+        service: CatalogService = Depends(),
+    ):
+    return await service.create(data=data, user=user, db=db)
+
+
+@router.get('/get', description="Get catalog")
+async def get_forum(
+        service: CatalogService = Depends(),
+        db: Session = Depends(get_session)
+):
+    return await service.filter(db=db)
+
+
+@router.post('/create/forum', response_model=Union[ForumSchema, ImagesForumSchema],
              status_code=status.HTTP_201_CREATED,
              description="Creating forum")
 async def create_forum(
@@ -34,10 +53,10 @@ async def create_forum(
         db: Session = Depends(get_session),
         service: ForumService = Depends(),
         image: UploadFile or None = File(None)):
-    return await service.create(title=data.title, description=data.description, user_id=user.id, image=image, db=db)
+    return await service.create(catalog_id=data.catalog_id, title=data.title, description=data.description, user_id=user.id, image=image, db=db)
 
 
-@router.get('/get', description="Get all forum information")
+@router.get('/get/forum', description="Get all forum information")
 async def get_forum(
         params: GetForumSchema = Depends(),
         service: ForumService = Depends(),
@@ -47,7 +66,7 @@ async def get_forum(
     return await service.filter(db=db, params=params)
 
 
-@router.get('/get-own', description="Get all own forum information")
+@router.get('/get-own/forum', description="Get all own forum information")
 async def get_forum(
         params: GetForumSchema = Depends(),
         user: User = Depends(get_current_user),
@@ -57,7 +76,7 @@ async def get_forum(
     return await service.filter(db=db, user_id=user.id, params=params)
 
 
-@router.patch('/update',
+@router.patch('/update/forum',
               description="Forum update")
 async def update_forum(
         image: UploadFile or None = File(None),
@@ -66,11 +85,11 @@ async def update_forum(
         db: Session = Depends(get_session),
         service: ForumService = Depends()
 ):
-    return await service.update_forum(user_id=user.id, db=db, forum_id=form.id, title=form.title,
+    return await service.update_forum(user_id=user.id, db=db, forum_id=form.id, catalog_id=form.catalog_id, title=form.title,
                                       description=form.description, image=image)
 
 
-@router.delete('/delete', description="Delete forum")
+@router.delete('/delete/forum', description="Delete forum")
 def delete_forum(
         pk: int,
         user: User = Depends(get_current_user),
@@ -79,7 +98,7 @@ def delete_forum(
     return service.delete_forum(id=pk, user_id=user.id)
 
 
-@router.get("/get-comment")
+@router.get("/get-comment/forum")
 async def get_comment(
         pk: int,
         db: Session = Depends(get_session),
@@ -88,7 +107,7 @@ async def get_comment(
     return service.filter(db=db, forum_id=pk)
 
 
-@router.post("/create-comment", response_model=CreateForumDiscussion, status_code=status.HTTP_201_CREATED,
+@router.post("/create-comment/forum", response_model=CreateForumDiscussion, status_code=status.HTTP_201_CREATED,
              description="Create comment")
 async def create_discussion(
         form: CreateForumDiscussion,
@@ -99,7 +118,7 @@ async def create_discussion(
     return await service.create(forum_id=form.forum_id, description=form.description, db=db, user=user)
 
 
-@router.patch("/update-comment")
+@router.patch("/update-comment/forum")
 def update_discussion(
         form: UpdateForumDiscussion,
         user: User = Depends(get_current_user),

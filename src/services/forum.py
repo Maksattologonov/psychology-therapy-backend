@@ -10,11 +10,45 @@ from sqlalchemy.orm import joinedload, aliased
 from common.common import get_instance_slice
 from core.database import Session, get_session
 from models.accounts import User
-from models.forum import Forum, ImagesForum, forum, ForumDiscussion
-from schemas.forum import GetForumSchema
+from models.forum import Forum, ImagesForum, forum, ForumDiscussion, Catalog
+from schemas.forum import GetForumSchema, CreateCatalogSchema
 from common.common import bad_exception
 
 conn = Session()
+
+
+class CatalogService:
+    model = Catalog
+
+    @classmethod
+    async def get(cls, db: Session, **filters):
+        query = db.query(cls.model).filter_by(**filters).first()
+        if not query:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail='Catalog not found'
+            )
+        return await query
+
+    @classmethod
+    async def filter(cls, db: Session, **filters):
+        query = db.query(cls.model).filter_by(**filters).all()
+        if not query:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail='Catalog`s not found'
+            )
+        return query
+
+    @classmethod
+    async def create(cls, data: CreateCatalogSchema, db: Session, user: User):
+        try:
+            record = cls.model(title=data.title)
+            db.add(record)
+            db.commit()
+            return record
+        except Exception:
+            raise HTTPException(detail="Bad credentials", status_code=status.HTTP_400_BAD_REQUEST)
 
 
 class ForumService:
@@ -40,7 +74,7 @@ class ForumService:
             for i in query:
                 instance = cls.get_image(db=db, forum_id=i.id)
                 discussions = ForumDiscussionService.filter(db=db, forum_id=i.id)
-                request.append({"id": i.id, "title": i.title, "description": i.description,
+                request.append({"id": i.id, "catalog_id": i.catalog_id, "title": i.title, "description": i.description,
                                 "updated_at": i.updated_at, "created_at": i.created_at,
                                 "images": instance, "comments": discussions})
             return JSONResponse(content=jsonable_encoder(request[instance_slice]))
@@ -87,30 +121,37 @@ class ForumService:
             )
 
     @classmethod
-    async def create(cls, db: Session, title: str, description: str, user_id: int,
+    async def create(cls, db: Session, catalog_id: int, title: str, description: str, user_id: int,
                      image: Optional[UploadFile] = File(None)):
-        try:
-            if title:
-                record = cls.model(
-                    title=title,
-                    description=description,
-                    user_id=user_id,
+        catalog = db.query(Catalog).filter_by(id=catalog_id).first()
+        if catalog:
+            try:
+                if title:
+                    record = cls.model(
+                        catalog_id=catalog_id,
+                        title=title,
+                        description=description,
+                        user_id=user_id,
+                    )
+                    db.add(record)
+                    db.commit()
+                    if image:
+                        await cls.save_image(image=image, title=title)
+                    return record
+                exception = HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="could not validate credentials"
                 )
-                db.add(record)
-                db.commit()
-                if image:
-                    await cls.save_image(image=image, title=title)
-                return record
-            exception = HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="could not validate credentials"
-            )
-            raise exception from None
-        except sqlalchemy.exc.IntegrityError:
-            raise HTTPException(
-                status_code=status.HTTP_406_NOT_ACCEPTABLE,
-                detail="Title already exists"
-            )
+                raise exception from None
+            except sqlalchemy.exc.IntegrityError:
+                raise HTTPException(
+                    status_code=status.HTTP_406_NOT_ACCEPTABLE,
+                    detail="Title already exists"
+                )
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Catalog not found"
+        )
 
     @classmethod
     async def save_image(cls, title: str, image: Optional[UploadFile] = File(None)):
@@ -126,7 +167,7 @@ class ForumService:
                             detail="Image saving error")
 
     @classmethod
-    async def update_forum(cls, db: Session, forum_id: int, user_id: int, title: str, description: str,
+    async def update_forum(cls, db: Session, forum_id: int, catalog_id: int, user_id: int, title: str, description: str,
                            image: Optional[UploadFile] = File(None)):
         try:
             if user_id:
@@ -134,6 +175,9 @@ class ForumService:
                 if query:
                     if title:
                         query.update({"title": title})
+                        db.commit()
+                    if catalog_id:
+                        query.update({"catalog_id": catalog_id})
                         db.commit()
                     if description:
                         query.update({"description": description})

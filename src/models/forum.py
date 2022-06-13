@@ -4,10 +4,18 @@ from sqlalchemy.orm import relationship
 from core.database import Base
 
 
+class Catalog(Base):
+    __tablename__ = "catalog"
+
+    id = Column(Integer, primary_key=True, index=True, unique=True)
+    title = Column(String(255), nullable=False, unique=True)
+
+
 class Forum(Base):
     __tablename__ = 'forum'
 
     id = Column(Integer, primary_key=True, index=True, unique=True)
+    catalog_id = Column(Integer, ForeignKey('catalog.id'), nullable=False)
     user_id = Column(Integer, ForeignKey('users.id'))
     title = Column(String(255), nullable=False, unique=True)
     description = Column(Text)
