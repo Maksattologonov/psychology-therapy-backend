@@ -1,6 +1,8 @@
-from fastapi import Depends, APIRouter
+from fastapi import Depends, APIRouter, status
 from fastapi.security import OAuth2PasswordRequestForm, APIKeyHeader
 
+from core.database import Session, get_session
+from models.accounts import User
 from services.accounts import SendMessageWhenCreateUser, oauth2_scheme
 from schemas.accounts import (
     UserSchema, UserCreateSchema,
@@ -33,8 +35,9 @@ def sign_in(
 
 
 @router.get('/user', response_model=UserGetSchema)
-def get_user(user: UserSchema = Depends(get_current_user)):
-    return AuthService.get_user(id=user.id)
+def get_user(user: UserSchema = Depends(get_current_user),
+             service: AuthService = Depends()):
+    return service.get_user(id=user.id)
 
 
 @router.post('/send-email')
@@ -52,13 +55,34 @@ def refresh_token(user: UserSchema = Depends(get_current_user), service: AuthSer
     return service.refresh_token(pk=user.id)
 
 
-@router.patch('/update-profile', response_description="Profile updated")
+@router.patch('/update-profile', response_model=UserGetSchema, response_description="Profile updated",
+              status_code=status.HTTP_201_CREATED)
 def update_profile(form: UserUpdateSchema = Depends(), user: UserSchema = Depends(get_current_user)):
     return AuthService.update_profile(pk=user.id, name=form.name, last_name=form.last_name,
                                       anonymous_name=form.anonymous_name)
 
 
 @router.put("/reset-password", response_description="Password successfully changed")
-def reset_password(form: ResetPasswordSchema, user: UserSchema = Depends(get_current_user)):
-    return AuthService.reset_password(user_id=user.id, code=form.code, new_password=form.new_password,
+def reset_password(form: ResetPasswordSchema):
+    return AuthService.reset_password(email=form.email, code=form.code, new_password=form.new_password,
                                       confirm_password=form.confirm_password)
+
+
+@router.put("/block-user")
+def block_user(
+        pk: int,
+        user: UserSchema = Depends(get_current_user),
+        db: Session = Depends(get_session),
+        service: AuthService = Depends(),
+):
+    return service.block_user(user=user, blocking_user=pk, db=db)
+
+
+@router.put("/unblock-user")
+def unblock_user(
+        pk: int,
+        user: UserSchema = Depends(get_current_user),
+        db: Session = Depends(get_session),
+        service: AuthService = Depends(),
+):
+    return service.unblock_user(user=user, blocking_user=pk, db=db)

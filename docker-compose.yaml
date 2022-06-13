@@ -7,10 +7,10 @@ services:
     environment:
       - DATABASE_USER=postgresql://postgres:postgres@localhost:5432/db
   web:
-    build: .
+    build: src
     volumes:
       - .:/code
     ports:
-      - "8010:8010"
+      - "8080:8080"
     depends_on:
       - postgres

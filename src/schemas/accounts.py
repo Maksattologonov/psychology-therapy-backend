@@ -22,7 +22,7 @@ class BaseUserSchema(BaseModel):
 class UserCreateSchema(BaseModel):
     name: str
     last_name: str
-    anonymous_name: str
+    is_employee: Optional[bool] = False
     email: str
     _normalize_name = validator('email', allow_reuse=True)(must_be_manas_account)
     password: str
@@ -40,6 +40,8 @@ class UserCreateSchema(BaseModel):
 class UserSchema(BaseModel):
     id: int
     email: str
+    is_blocked: bool
+    is_employee: bool
 
     class Config:
         orm_mode = True
@@ -83,7 +85,9 @@ class UserGetSchema(BaseModel):
     email: Optional[str]
     name: Optional[str]
     last_name: Optional[str]
-    anonymous_name: Optional[str]
+    is_employee: Optional[str]
+    is_student: Optional[str]
+    is_superuser: Optional[str]
 
     class Config:
         orm_mode = True
@@ -99,6 +103,8 @@ class UserUpdateSchema(BaseModel):
 
 
 class ResetPasswordSchema(BaseModel):
+    email: str
+    _normalize_name = validator('email', allow_reuse=True)(must_be_manas_account)
     code: int
     new_password: str
     confirm_password: str

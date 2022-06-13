@@ -9,7 +9,7 @@ from decouple import config
 from jinja2 import Template
 from starlette.responses import JSONResponse
 from common.message import raw
-from models.accounts import VerificationCode
+from models.accounts import VerificationCode, User
 from passlib.hash import bcrypt, des_crypt
 from fastapi import status
 from pydantic import ValidationError
@@ -98,20 +98,34 @@ class AuthService:
             detail='duplicate key value violates unique constraint',
         )
         try:
-            user = accounts.User(
-                name=user_data.name,
-                last_name=user_data.last_name,
-                anonymous_name=user_data.anonymous_name,
-                email=user_data.email,
-                hashed_password=self.hash_password(user_data.password),
-                created_at=datetime.utcnow(),
-                updated_at=datetime.utcnow(),
-                is_active=False
-            )
-            self.session.add(user)
-            self.session.commit()
-            SendMessageWhenCreateUser.send_email_async(email_to=user_data.email, name=user_data.name,
-                                                       last_name=user_data.last_name)
+            if user_data.is_employee:
+                user = accounts.User(
+                    name=user_data.name,
+                    last_name=user_data.last_name,
+                    is_employee=user_data.is_employee,
+                    is_student=False,
+                    email=user_data.email,
+                    hashed_password=self.hash_password(user_data.password),
+                    created_at=datetime.utcnow(),
+                    updated_at=datetime.utcnow(),
+                    is_active=False
+                )
+                self.session.add(user)
+                self.session.commit()
+            else:
+                user = accounts.User(
+                    name=user_data.name,
+                    last_name=user_data.last_name,
+                    is_employee=user_data.is_employee,
+                    email=user_data.email,
+                    hashed_password=self.hash_password(user_data.password),
+                    created_at=datetime.utcnow(),
+                    updated_at=datetime.utcnow(),
+                    is_active=False
+                )
+                self.session.add(user)
+                self.session.commit()
+            SendMessageWhenCreateUser.send_email_async(email=user_data.email)
             return JSONResponse(
                 status_code=status.HTTP_200_OK,
                 content="The account has been successfully registered, to use please go through verification"
@@ -130,7 +144,7 @@ class AuthService:
         user = (
             self.session
                 .query(accounts.User)
-                .filter(accounts.User.email == email)
+                .filter(accounts.User.email == email, accounts.User.is_blocked == False)
                 .first()
         )
         if not user:
@@ -150,8 +164,8 @@ class AuthService:
 
     @classmethod
     def update_profile(cls, pk: int, name: str, last_name: str, anonymous_name: str):
+        query = conn.query(accounts.User).filter_by(id=pk)
         try:
-            query = conn.query(accounts.User).filter_by(id=pk)
             if name:
                 query.update({"name": name})
                 conn.commit()
@@ -161,23 +175,50 @@ class AuthService:
             if anonymous_name:
                 query.update({"anonymous_name": anonymous_name})
                 conn.commit()
-            return HTTPException(status_code=status.HTTP_201_CREATED, detail="Profile updated")
+            return query.first()
         except Exception as ex:
-            raise HTTPException(detail=ex, status_code=status.HTTP_400_BAD_REQUEST)
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Parameters cannot be empty")
 
     @classmethod
-    def reset_password(cls, user_id: int, code: int, new_password: str, confirm_password: str):
-        if conn.query(VerificationCode).filter_by(code=code).first():
-            if new_password == confirm_password:
-                table = accounts.User.__table__
-                stmt = table.update().values(hashed_password=cls.hash_password(new_password))
-                conn.execute(stmt)
-                conn.commit()
-                return HTTPException(status_code=status.HTTP_200_OK,
-                                     detail="Password was successfully change")
+    def reset_password(cls, email: str, code: int, new_password: str, confirm_password: str):
+        if conn.query(accounts.User).filter_by(email=email).first():
+            if conn.query(VerificationCode).filter_by(code=code).first():
+                if new_password == confirm_password:
+                    table = accounts.User.__table__
+                    stmt = table.update().values(hashed_password=cls.hash_password(new_password))
+                    conn.execute(stmt)
+                    conn.commit()
+                    return HTTPException(status_code=status.HTTP_200_OK,
+                                         detail="Password was successfully change")
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                    detail="Passwords do not match")
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                                detail="Passwords do not match")
+                                detail="Wrong code")
         raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Request cannot be empty")
+
+    @classmethod
+    def block_user(cls, user: UserSchema, db: Session, blocking_user: int):
+        if user.is_employee and not user.is_blocked:
+            b_user = db.query(User).filter_by(id=blocking_user)
+            if b_user.first() and not b_user.first().is_blocked:
+                b_user.update({"is_blocked": True})
+                db.commit()
+                return JSONResponse(status_code=status.HTTP_200_OK, content=f"Пользователь заблокирован")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Пользователь не найден")
+        else:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="У Вас не полномочий для удаления")
+
+    @classmethod
+    def unblock_user(cls, user: UserSchema, db: Session, blocking_user: int):
+        if user.is_employee and not user.is_blocked:
+            b_user = db.query(User).filter_by(id=blocking_user)
+            if b_user.first() and b_user.first().is_blocked:
+                b_user.update({"is_blocked": False})
+                db.commit()
+                return JSONResponse(status_code=status.HTTP_200_OK, content=f"Пользователь разблокирован")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Пользователь не найден")
+        else:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="У Вас не полномочий для разблокировки")
 
 
 class SendMessageWhenCreateUser:
@@ -254,4 +295,3 @@ class SendMessageWhenCreateUser:
             else:
                 cls.create_record(user=email, code=code)
         return code
-
