@@ -1,8 +1,8 @@
-"""update forum model
+"""add status row
 
-Revision ID: 0a01a4ebc0b4
+Revision ID: 1ef8d8152cf7
 Revises: 
-Create Date: 2022-06-12 21:08:09.224361
+Create Date: 2022-06-14 15:01:13.420242
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '0a01a4ebc0b4'
+revision = '1ef8d8152cf7'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -47,6 +47,9 @@ def upgrade():
     op.create_table('appointment',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=True),
+    sa.Column('phone_number', sa.String(length=255), nullable=True),
+    sa.Column('address', sa.String(length=255), nullable=True),
+    sa.Column('status', sa.Integer(), nullable=True),
     sa.Column('description', sa.Text(), nullable=True),
     sa.Column('date', sa.DateTime(timezone=True), nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
@@ -69,7 +72,7 @@ def upgrade():
     op.create_index(op.f('ix_article_id'), 'article', ['id'], unique=True)
     op.create_table('forum',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('catalog_id', sa.Integer(), nullable=True),
+    sa.Column('catalog_id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=True),
     sa.Column('title', sa.String(length=255), nullable=False),
     sa.Column('description', sa.Text(), nullable=True),

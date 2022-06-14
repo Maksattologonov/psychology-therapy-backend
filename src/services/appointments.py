@@ -1,4 +1,5 @@
 import datetime
+from enum import Enum
 
 import sqlalchemy
 from typing import Optional
@@ -14,10 +15,14 @@ class AppointmentService:
     model = Appointments
 
     @classmethod
-    async def create(cls, db: Session, description: str, user_id: User.id, date: datetime.datetime):
+    async def create(cls, db: Session, phone_number: str, address: str, a_status: int, description: str,
+                     user_id: User.id, date: datetime.datetime):
         try:
             if description and date:
                 record = cls.model(
+                    phone_number=phone_number,
+                    address=address,
+                    status=a_status,
                     description=description,
                     user_id=user_id,
                     date=date
@@ -30,6 +35,21 @@ class AppointmentService:
                 status_code=status.HTTP_406_NOT_ACCEPTABLE,
                 detail="There is already an entry for this date"
             )
+
+    @classmethod
+    async def update(cls, db: Session, appointment_id: int, a_status: int, user_id: User.id,):
+        try:
+            if user_id:
+                query = db.query(cls.model).filter_by(id=appointment_id, user_id=user_id)
+                if query.first():
+                    if a_status:
+                        query.update({"status": a_status})
+                        db.commit()
+                        db.commit()
+                    return query.first()
+            raise HTTPException(detail="Appointment not found", status_code=status.HTTP_404_NOT_FOUND)
+        except Exception as ex:
+            raise HTTPException(detail="Something went wrong", status_code=status.HTTP_400_BAD_REQUEST)
 
     @classmethod
     async def get(cls, db: Session, **filters):
