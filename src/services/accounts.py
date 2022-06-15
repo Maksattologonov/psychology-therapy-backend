@@ -40,6 +40,16 @@ class AuthService:
         return conn.query(accounts.User).filter_by(**filters).first()
 
     @classmethod
+    def get_employees(cls, db: Session, user: User, **filters):
+        employee = db.query(accounts.User).filter_by(id=user.id).first()
+        if employee.is_employee:
+            schema = []
+            for i in db.query(accounts.User).filter_by(**filters).all():
+                schema.append(UserSchema.from_orm(i))
+            return schema
+        raise HTTPException(detail="Недостаточно прав для получения", status_code=status.HTTP_406_NOT_ACCEPTABLE)
+
+    @classmethod
     def verify_password(cls, plain_password: str, hashed_password: str) -> bool:
         return bcrypt.verify(plain_password, hashed_password)
 

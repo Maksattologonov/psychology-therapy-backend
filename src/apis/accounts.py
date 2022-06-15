@@ -86,3 +86,11 @@ def unblock_user(
         service: AuthService = Depends(),
 ):
     return service.unblock_user(user=user, blocking_user=pk, db=db)
+
+
+@router.get("/get-employees")
+def get(
+        user: UserSchema = Depends(get_current_user),
+        db: Session = Depends(get_session),
+        service: AuthService = Depends()):
+    return service.get_employees(db=db, user=user, is_employee=True)
