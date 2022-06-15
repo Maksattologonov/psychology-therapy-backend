@@ -4,10 +4,15 @@ from sqlalchemy import Boolean, Column, Integer, String, DateTime, Text, Foreign
 from core.database import Base
 
 
-class MyEnum(enum.IntEnum):
+class StatusEnum(enum.IntEnum):
     NO_CHECKED = 1
     CHECKED = 2
     EXECUTED = 3
+
+
+class TypeEnum(enum.Enum):
+    SINGLE = "SINGLE"
+    MULTIPLE = "MULTIPLE"
 
 
 class Appointments(Base):
@@ -18,5 +23,5 @@ class Appointments(Base):
     phone_number = Column(String(255))
     address = Column(String(255))
     status = Column(Integer)
-    description = Column(Text)
+    type = Column(Text)
     date = Column(DateTime(timezone=True), unique=True)

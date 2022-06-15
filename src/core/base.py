@@ -3,3 +3,4 @@ from models.accounts import *
 from models.forum import *
 from models.article import *
 from models.appointments import *
+from models.gallery import *

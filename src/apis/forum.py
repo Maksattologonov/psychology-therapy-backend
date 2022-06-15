@@ -58,12 +58,13 @@ async def create_forum(
 
 @router.get('/get/forum', description="Get all forum information")
 async def get_forum(
+        catalog_id: int,
         params: GetForumSchema = Depends(),
         service: ForumService = Depends(),
         db: Session = Depends(get_session)
 ):
     instance_slice = get_instance_slice(params.page, params.count)
-    return await service.filter(db=db, params=params)
+    return await service.filter(db=db, params=params, catalog_id=catalog_id)
 
 
 @router.get('/get-own/forum', description="Get all own forum information")

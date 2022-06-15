@@ -52,7 +52,7 @@ class APITestForum(TestCase):
             "description": "string",
         }
         token = self.token
-        response = self.client.post("forum/create/", data={
+        response = self.client.post("catalog/forum/create/", data={
             'image': ('test.png', open('images/test_images/test.png'), 'rb', "image/jpeg")}, params=data,
                                     headers={"Authorization": token, "Content-Type": "multipart/form-data"})
         # content = json.loads(response.content.decode('utf-8'))
