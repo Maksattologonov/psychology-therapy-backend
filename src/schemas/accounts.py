@@ -93,6 +93,16 @@ class UserGetSchema(BaseModel):
         orm_mode = True
 
 
+class GetEmployeeSchema(BaseModel):
+    id: int
+    email: str
+    name: str
+    last_name: str
+
+    class Config:
+        orm_mode = True
+
+
 class UserUpdateSchema(BaseModel):
     name: Optional[str]
     last_name: Optional[str]

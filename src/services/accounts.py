@@ -22,7 +22,7 @@ from jose import (
 )
 from schemas.accounts import (
     TokenSchema,
-    UserSchema, UserCreateSchema
+    UserSchema, UserCreateSchema, GetEmployeeSchema
 )
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/auth/sign-in')
@@ -45,9 +45,9 @@ class AuthService:
         if employee.is_employee:
             schema = []
             for i in db.query(accounts.User).filter_by(**filters).all():
-                schema.append(UserSchema.from_orm(i))
+                schema.append(GetEmployeeSchema.from_orm(i))
             return schema
-        raise HTTPException(detail="Недостаточно прав для получения", status_code=status.HTTP_406_NOT_ACCEPTABLE)
+        raise HTTPException(detail="Недостаточно прав для получения данных", status_code=status.HTTP_406_NOT_ACCEPTABLE)
 
     @classmethod
     def verify_password(cls, plain_password: str, hashed_password: str) -> bool:
