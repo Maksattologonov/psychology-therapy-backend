@@ -3,14 +3,14 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from models.appointments import MyEnum
+from models.appointments import TypeEnum, StatusEnum
 
 
 class CreateAppointmentSchema(BaseModel):
     phone_number: str
     address: str
     description: Optional[str]
-    status: MyEnum
+    status: StatusEnum
     date: datetime.datetime
 
     class Config:
@@ -19,7 +19,7 @@ class CreateAppointmentSchema(BaseModel):
 
 class UpdateAppointmentSchema(BaseModel):
     appointment_id: int
-    status: MyEnum
+    status: StatusEnum
 
 
 class GetAppointmentSchema(BaseModel):
