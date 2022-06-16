@@ -5,9 +5,8 @@ from core.database import Session, get_session
 from models.accounts import User
 from services.accounts import SendMessageWhenCreateUser, oauth2_scheme
 from schemas.accounts import (
-    UserSchema, UserCreateSchema,
-    TokenSchema, EmailSchema, VerifiedCodeSchema, BaseUserSchema, RefreshTokenSchema, UserUpdateSchema,
-    UserGetSchema, ResetPasswordSchema
+    UserSchema, UserCreateSchema, TokenSchema, EmailSchema, VerifiedCodeSchema, BaseUserSchema, RefreshTokenSchema,
+    UserUpdateSchema, UserGetSchema, ResetPasswordSchema
 )
 from services.accounts import AuthService, get_current_user
 

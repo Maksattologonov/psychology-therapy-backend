@@ -1,8 +1,8 @@
-"""add status row
+"""change models
 
-Revision ID: 1ef8d8152cf7
+Revision ID: 61dcfd1aca8b
 Revises: 
-Create Date: 2022-06-14 15:01:13.420242
+Create Date: 2022-06-16 15:11:38.759284
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '1ef8d8152cf7'
+revision = '61dcfd1aca8b'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -25,6 +25,13 @@ def upgrade():
     sa.UniqueConstraint('title')
     )
     op.create_index(op.f('ix_catalog_id'), 'catalog', ['id'], unique=True)
+    op.create_table('gallery',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('title', sa.String(length=255), nullable=True),
+    sa.Column('description', sa.Text(), nullable=True),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_gallery_id'), 'gallery', ['id'], unique=True)
     op.create_table('users',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=50), nullable=True),
@@ -50,7 +57,7 @@ def upgrade():
     sa.Column('phone_number', sa.String(length=255), nullable=True),
     sa.Column('address', sa.String(length=255), nullable=True),
     sa.Column('status', sa.Integer(), nullable=True),
-    sa.Column('description', sa.Text(), nullable=True),
+    sa.Column('type', sa.String(length=10), nullable=True),
     sa.Column('date', sa.DateTime(timezone=True), nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id'),
@@ -84,6 +91,14 @@ def upgrade():
     sa.UniqueConstraint('title')
     )
     op.create_index(op.f('ix_forum_id'), 'forum', ['id'], unique=True)
+    op.create_table('gallery_image',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('gallery_id', sa.Integer(), nullable=True),
+    sa.Column('images', sa.String(length=100), nullable=True),
+    sa.ForeignKeyConstraint(['gallery_id'], ['gallery.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_gallery_image_id'), 'gallery_image', ['id'], unique=True)
     op.create_table('verification_code',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user', sa.String(), nullable=True),
@@ -134,6 +149,8 @@ def downgrade():
     op.drop_table('forum_discussion')
     op.drop_index(op.f('ix_verification_code_id'), table_name='verification_code')
     op.drop_table('verification_code')
+    op.drop_index(op.f('ix_gallery_image_id'), table_name='gallery_image')
+    op.drop_table('gallery_image')
     op.drop_index(op.f('ix_forum_id'), table_name='forum')
     op.drop_table('forum')
     op.drop_index(op.f('ix_article_id'), table_name='article')
@@ -143,6 +160,8 @@ def downgrade():
     op.drop_index(op.f('ix_users_id'), table_name='users')
     op.drop_index(op.f('ix_users_email'), table_name='users')
     op.drop_table('users')
+    op.drop_index(op.f('ix_gallery_id'), table_name='gallery')
+    op.drop_table('gallery')
     op.drop_index(op.f('ix_catalog_id'), table_name='catalog')
     op.drop_table('catalog')
     # ### end Alembic commands ###

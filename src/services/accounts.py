@@ -40,7 +40,7 @@ class AuthService:
         return conn.query(accounts.User).filter_by(**filters).first()
 
     @classmethod
-    def get_employees(cls, db: Session, user: User, **filters):
+    def get_employees(cls, db: Session, user: UserSchema, **filters):
         employee = db.query(accounts.User).filter_by(id=user.id).first()
         if employee.is_employee:
             schema = []

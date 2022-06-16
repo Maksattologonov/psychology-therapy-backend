@@ -15,15 +15,15 @@ class AppointmentService:
     model = Appointments
 
     @classmethod
-    async def create(cls, db: Session, phone_number: str, address: str, a_status: int, description: str,
-                     user_id: User.id, date: datetime.datetime):
+    async def create(cls, db: Session, phone_number: str, address: str, a_status: int,
+                     user_id: User.id, typeof: int, date: datetime.datetime):
         try:
-            if description and date:
+            if date:
                 record = cls.model(
                     phone_number=phone_number,
                     address=address,
                     status=a_status,
-                    description=description,
+                    type=typeof,
                     user_id=user_id,
                     date=date
                 )

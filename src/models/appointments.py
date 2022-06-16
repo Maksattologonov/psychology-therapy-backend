@@ -10,9 +10,9 @@ class StatusEnum(enum.IntEnum):
     EXECUTED = 3
 
 
-class TypeEnum(enum.Enum):
-    SINGLE = "SINGLE"
-    MULTIPLE = "MULTIPLE"
+class TypeEnum(enum.IntEnum):
+    SINGLE = 1
+    MULTIPLE = 2
 
 
 class Appointments(Base):
@@ -23,5 +23,5 @@ class Appointments(Base):
     phone_number = Column(String(255))
     address = Column(String(255))
     status = Column(Integer)
-    type = Column(Text)
+    type = Column(Integer)
     date = Column(DateTime(timezone=True), unique=True)
