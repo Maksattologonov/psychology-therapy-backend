@@ -40,9 +40,11 @@ async def create_gallery(form: CreateGallerySchema = Depends(),
 
 
 @router.get("/get-images/")
-async def get_images(db: Session = Depends(get_session),
-                     service: GalleryService = Depends()):
-    return await service.get_images(db=db)
+async def get_images(
+        pk: int,
+        db: Session = Depends(get_session),
+        service: GalleryService = Depends()):
+    return await service.get_images(db=db, gallery_title_id=pk)
 
 
 @router.delete("delete-title")

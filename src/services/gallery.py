@@ -81,3 +81,4 @@ class GalleryService:
             return db.query(GalleryImages).filter_by(**filters).all()
         except Exception:
             raise HTTPException(detail="Images not found")
+
