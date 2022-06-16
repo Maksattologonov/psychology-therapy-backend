@@ -16,6 +16,6 @@ class GalleryImages(Base):
 
     __tablename__ = 'gallery_image'
     id = Column(Integer, primary_key=True, index=True, unique=True)
-    gallery_id = Column(Integer, ForeignKey('gallery.id', ondelete='CASCADE'))
+    gallery_title_id = Column(Integer, ForeignKey('gallery.id', ondelete='CASCADE'))
     gallery = relationship(Gallery, lazy="joined", innerjoin=True, join_depth=3)
-    images = Column(String(100))
+    images = Column(String(200))
