@@ -27,13 +27,22 @@ router = APIRouter(
 
 @router.post('/create/', response_model=CatalogSchema, status_code=status.HTTP_201_CREATED,
              description="Create Catalog")
-async def create_schema(
+async def create_catalog(
         data: CreateCatalogSchema = Depends(),
         user: User = Depends(get_current_user),
         db: Session = Depends(get_session),
         service: CatalogService = Depends(),
     ):
     return await service.create(data=data, user=user, db=db)
+
+
+@router.delete('/delete', description="Delete catalog")
+def delete_catalog(
+        pk: int,
+        user: User = Depends(get_current_user),
+        service: CatalogService = Depends()
+):
+    return service.delete(id=pk)
 
 
 @router.get('/get', description="Get catalog")

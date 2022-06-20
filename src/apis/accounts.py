@@ -6,7 +6,7 @@ from models.accounts import User
 from services.accounts import SendMessageWhenCreateUser, oauth2_scheme
 from schemas.accounts import (
     UserSchema, UserCreateSchema, TokenSchema, EmailSchema, VerifiedCodeSchema, BaseUserSchema, RefreshTokenSchema,
-    UserUpdateSchema, UserGetSchema, ResetPasswordSchema
+    UserUpdateSchema, UserGetSchema, ResetPasswordSchema, AdminCreateSchema
 )
 from services.accounts import AuthService, get_current_user
 
@@ -19,7 +19,7 @@ router = APIRouter(
 
 @router.post('/sign-up', response_model=TokenSchema)
 def sign_up(
-        user_data: UserCreateSchema,
+        user_data: UserCreateSchema = Depends(),
         service: AuthService = Depends()
 ):
     return service.register_user(user_data)
@@ -31,6 +31,14 @@ def sign_in(
         service: AuthService = Depends()
 ):
     return service.authenticate_user(form_data.username, form_data.password)
+
+
+@router.post('/create-admin', response_model=TokenSchema)
+def sign_up(
+        user_data: AdminCreateSchema = Depends(),
+        service: AuthService = Depends()
+):
+    return service.register_superuser(user_data)
 
 
 @router.get('/user', response_model=UserGetSchema)

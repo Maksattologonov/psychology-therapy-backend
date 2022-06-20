@@ -80,5 +80,5 @@ class GalleryService:
         try:
             return db.query(GalleryImages).filter_by(**filters).all()
         except Exception:
-            raise HTTPException(detail="Images not found")
+            raise HTTPException(detail="Images not found", status_code=status.HTTP_400_BAD_REQUEST)
 

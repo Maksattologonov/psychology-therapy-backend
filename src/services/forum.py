@@ -50,6 +50,21 @@ class CatalogService:
         except Exception:
             raise HTTPException(detail="Bad credentials", status_code=status.HTTP_400_BAD_REQUEST)
 
+    @classmethod
+    def delete(cls, **filters):
+        exception = HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Catalog not found"
+        )
+        if filters:
+            if conn.query(cls.model).filter_by(**filters).delete():
+                conn.commit()
+                return HTTPException(
+                    status_code=status.HTTP_202_ACCEPTED,
+                    detail="Catalog successfully deleted"
+                )
+            raise exception from None
+
 
 class ForumService:
     model = Forum

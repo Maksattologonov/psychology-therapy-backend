@@ -37,6 +37,18 @@ class UserCreateSchema(BaseModel):
         raise ValueError("Password must be more than 8 characters")
 
 
+class AdminCreateSchema(BaseModel):
+    name: str
+    last_name: str
+    secret_key: str
+    email: str
+    _normalize_name = validator('email', allow_reuse=True)(must_be_manas_account)
+    password: str
+
+    class Config:
+        orm_mode = True
+
+
 class UserSchema(BaseModel):
     id: int
     email: str
