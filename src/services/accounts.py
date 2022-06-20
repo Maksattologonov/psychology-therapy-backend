@@ -296,7 +296,7 @@ class SendMessageWhenCreateUser:
 
     @classmethod
     async def send_email_async(cls, email: str):
-        record = await conn.query(accounts.User).filter_by(email=email).first()
+        record = conn.query(accounts.User).filter_by(email=email).first()
         if record:
             bar = Template(raw)
             code = cls.verification_code(email=email)
