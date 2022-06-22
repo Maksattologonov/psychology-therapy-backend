@@ -245,29 +245,31 @@ class AuthService:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="У Вас не полномочий для разблокировки")
 
     def register_superuser(self, user_data: AdminCreateSchema):
-        if user_data.secret_key == config("JWT_SECRET"):
-            user = accounts.User(
-                name=user_data.name,
-                last_name=user_data.last_name,
-                is_employee=False,
-                is_superuser=True,
-                is_student=False,
-                email=user_data.email,
-                hashed_password=self.hash_password(user_data.password),
-                created_at=datetime.utcnow(),
-                updated_at=datetime.utcnow(),
-                is_active=False
+        try:
+            if user_data.secret_key == config("JWT_SECRET"):
+                user = accounts.User(
+                    name=user_data.name,
+                    last_name=user_data.last_name,
+                    is_employee=False,
+                    is_superuser=True,
+                    is_student=False,
+                    email=user_data.email,
+                    hashed_password=self.hash_password(user_data.password),
+                    created_at=datetime.utcnow(),
+                    updated_at=datetime.utcnow(),
+                    is_active=False
+                )
+                self.session.add(user)
+                self.session.commit()
+                return JSONResponse(
+                    status_code=status.HTTP_200_OK,
+                    content="The account has been successfully registered, to use please go through verification"
+                )
+        except Exception:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail='duplicate key value violates unique constraint',
             )
-            self.session.add(user)
-            self.session.commit()
-            return JSONResponse(
-                status_code=status.HTTP_200_OK,
-                content="The account has been successfully registered, to use please go through verification"
-            )
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail='duplicate key value violates unique constraint',
-        )
 
 
 class SendMessageWhenCreateUser:

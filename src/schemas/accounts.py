@@ -119,7 +119,6 @@ class GetEmployeeSchema(BaseModel):
 class UserUpdateSchema(BaseModel):
     name: Optional[str]
     last_name: Optional[str]
-    anonymous_name: Optional[str]
 
     class Config:
         orm_mode = True
