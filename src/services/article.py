@@ -1,9 +1,10 @@
 from typing import Optional
 
 import sqlalchemy
-from fastapi import UploadFile, File, HTTPException, status
+from fastapi import UploadFile, File, HTTPException, status, Response
 
 from core.database import Session
+from models.accounts import User
 from models.article import Article
 
 
@@ -93,16 +94,16 @@ class ArticleService:
             raise HTTPException(detail="Something went wrong", status_code=status.HTTP_400_BAD_REQUEST)
 
     @classmethod
-    def delete_article(cls, db: Session, **filters):
+    def delete_article(cls, db: Session, pk: int, user: User):
         exception = HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Article not found"
+            detail="you do not have permission to delete"
         )
-        if filters:
-            if db.query(cls.model).filter_by(**filters).delete():
+        if user.is_superuser:
+            if db.query(cls.model).filter_by(id=pk).delete():
                 db.commit()
-                return HTTPException(
+                return Response(
                     status_code=status.HTTP_202_ACCEPTED,
-                    detail="Article successfully deleted"
+                    content="Article successfully deleted"
                 )
-            raise exception
+        raise exception

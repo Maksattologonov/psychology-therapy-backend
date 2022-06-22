@@ -54,6 +54,7 @@ class UserSchema(BaseModel):
     email: str
     is_blocked: bool
     is_employee: bool
+    is_superuser: bool
 
     class Config:
         orm_mode = True

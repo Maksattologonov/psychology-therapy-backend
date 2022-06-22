@@ -35,7 +35,7 @@ async def get_forum(
     return await service.filter(db=db, pk=pk)
 
 
-@router.patch('/update', description="Article update")
+@router.patch('/update', response_model=GetArticleSchema, description="Article update")
 async def update_forum(
         image: UploadFile or None = File(None),
         form: UpdateArticleSchema = Depends(),
@@ -54,4 +54,4 @@ def delete_forum(
         db: Session = Depends(get_session),
         service: ArticleService = Depends()
 ):
-    return service.delete_article(id=pk, db=db, user_id=user.id)
+    return service.delete_article(pk=pk, db=db, user=user)

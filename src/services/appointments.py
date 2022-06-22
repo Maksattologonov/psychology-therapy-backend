@@ -1,11 +1,17 @@
 import datetime
+import smtplib
+import time
+from email.message import EmailMessage
 from enum import Enum
 
 import sqlalchemy
 from typing import Optional
 
+from decouple import config
 from fastapi import UploadFile, File, HTTPException, status
+from jinja2 import Template
 
+from common.message import raw_response
 from core.database import Session
 from models.accounts import User
 from models.appointments import Appointments
@@ -16,7 +22,7 @@ class AppointmentService:
 
     @classmethod
     async def create(cls, db: Session, phone_number: str, address: str, a_status: int,
-                     user_id: User.id, typeof: int, date: datetime.datetime):
+                     user_id: User.id, typeof: int, date: str):
         try:
             if date:
                 record = cls.model(
@@ -25,7 +31,7 @@ class AppointmentService:
                     status=a_status,
                     type=typeof,
                     user_id=user_id,
-                    date=date
+                    date_time=date
                 )
                 db.add(record)
                 db.commit()
@@ -41,14 +47,31 @@ class AppointmentService:
         try:
             if user_id:
                 query = db.query(cls.model).filter_by(id=appointment_id, user_id=user_id)
+                user = db.query(User).filter_by(id=user_id).first()
                 if query.first():
                     if a_status:
+                        if a_status == 2:
+                            bar = Template(raw_response)
+
+                            template = bar.render(
+                                messages={'name': f"{user.name + ' ' + user.last_name}",
+                                          "time": str(query.first().date_time)})
+                            message = EmailMessage()
+                            message['Subject'] = f'Здравствуйте {user.name + " " + user.last_name}!'
+                            message['From'] = config("MAIL_FROM")
+                            message['To'] = user.email
+                            message.add_alternative(template, subtype='html')
+                            smtp = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+                            smtp.login(config("MAIL_FROM"), config("MAIL_PASSWORD"))
+                            smtp.send_message(message)
+                            smtp.quit()
                         query.update({"status": a_status})
                         db.commit()
                         db.commit()
                     return query.first()
             raise HTTPException(detail="Appointment not found", status_code=status.HTTP_404_NOT_FOUND)
         except Exception as ex:
+            print(ex)
             raise HTTPException(detail="Something went wrong", status_code=status.HTTP_400_BAD_REQUEST)
 
     @classmethod

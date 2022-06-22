@@ -40,14 +40,29 @@ class AuthService:
         return conn.query(accounts.User).filter_by(**filters).first()
 
     @classmethod
-    def get_employees(cls, db: Session, user: UserSchema, **filters):
-        employee = db.query(accounts.User).filter_by(id=user.id).first()
-        if employee.is_employee:
-            schema = []
-            for i in db.query(accounts.User).filter_by(**filters).all():
+    def get_users(cls, db: Session, user: UserSchema):
+        schema = []
+        if user.is_superuser:
+            for i in db.query(accounts.User).all():
                 schema.append(GetEmployeeSchema.from_orm(i))
             return schema
-        raise HTTPException(detail="Недостаточно прав для получения данных", status_code=status.HTTP_406_NOT_ACCEPTABLE)
+        else:
+            raise HTTPException(detail="You don't have any permissions",
+                                status_code=status.HTTP_406_NOT_ACCEPTABLE)
+
+    @classmethod
+    def get_employees(cls, db: Session, user_id: int):
+        try:
+            if user_id:
+                return db.query(accounts.User).filter_by(id=user_id, is_employee=True).first()
+            else:
+                schema = []
+                for i in db.query(accounts.User).filter_by(is_employee=True).all():
+                    schema.append(GetEmployeeSchema.from_orm(i))
+                return schema
+        except Exception:
+            raise HTTPException(detail="Employees not found",
+                                status_code=status.HTTP_404_NOT_FOUND)
 
     @classmethod
     def verify_password(cls, plain_password: str, hashed_password: str) -> bool:

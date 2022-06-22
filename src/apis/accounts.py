@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import Depends, APIRouter, status
 from fastapi.security import OAuth2PasswordRequestForm, APIKeyHeader
 
@@ -97,7 +99,16 @@ def unblock_user(
 
 @router.get("/get-employees")
 def get(
+        user_id: Optional[int] = None,
         user: UserSchema = Depends(get_current_user),
         db: Session = Depends(get_session),
         service: AuthService = Depends()):
-    return service.get_employees(db=db, user=user, is_employee=True)
+    return service.get_employees(db=db, user_id=user_id)
+
+
+@router.get("/get-users")
+def get(
+        user: UserSchema = Depends(get_current_user),
+        db: Session = Depends(get_session),
+        service: AuthService = Depends()):
+    return service.get_users(db=db, user=user)

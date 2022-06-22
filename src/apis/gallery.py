@@ -47,7 +47,7 @@ async def get_images(
     return await service.get_images(db=db, gallery_title_id=pk)
 
 
-@router.delete("delete-title")
+@router.delete("/delete-title")
 async def delete_title(
         pk: int,
         db: Session = Depends(get_session),

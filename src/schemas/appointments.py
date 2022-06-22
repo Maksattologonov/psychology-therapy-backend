@@ -11,7 +11,7 @@ class CreateAppointmentSchema(BaseModel):
     address: str
     status: StatusEnum
     type: TypeEnum
-    date: datetime.datetime
+    date_time: str
 
     class Config:
         orm_mode = True
@@ -24,7 +24,11 @@ class UpdateAppointmentSchema(BaseModel):
 
 class GetAppointmentSchema(BaseModel):
     id: int
-    date: datetime.datetime
+    date_time: str
+    phone_number: str
+    address: str
+    status: StatusEnum
+    type: TypeEnum
 
     class Config:
         orm_mode = True

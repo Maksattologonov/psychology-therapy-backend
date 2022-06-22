@@ -1,6 +1,6 @@
 import enum
 
-from sqlalchemy import Boolean, Column, Integer, String, DateTime, Text, ForeignKey
+from sqlalchemy import Boolean, Column, Integer, String, Text, ForeignKey
 from core.database import Base
 
 
@@ -24,4 +24,4 @@ class Appointments(Base):
     address = Column(String(255))
     status = Column(Integer)
     type = Column(Integer)
-    date = Column(DateTime(timezone=True), unique=True)
+    date_time = Column(String(50), unique=True)

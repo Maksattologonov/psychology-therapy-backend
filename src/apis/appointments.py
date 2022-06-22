@@ -23,7 +23,7 @@ async def create_appointment(
         service: AppointmentService = Depends()
 ):
     return await service.create(db=db, phone_number=form.phone_number, address=form.address, a_status=form.status.value,
-                                date=form.date, typeof=form.type.value, user_id=user.id)
+                                date=form.date_time, typeof=form.type.value, user_id=user.id)
 
 
 @router.put("/update", response_model=GetAppointmentSchema, status_code=status.HTTP_201_CREATED)
