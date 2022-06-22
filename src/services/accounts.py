@@ -187,7 +187,7 @@ class AuthService:
         raise exception from None
 
     @classmethod
-    def update_profile(cls, pk: int, name: str, last_name: str, anonymous_name: str):
+    def update_profile(cls, pk: int, name: str, last_name: str):
         query = conn.query(accounts.User).filter_by(id=pk)
         try:
             if name:
@@ -196,11 +196,9 @@ class AuthService:
             if last_name:
                 query.update({"last_name": last_name})
                 conn.commit()
-            if anonymous_name:
-                query.update({"anonymous_name": anonymous_name})
-                conn.commit()
             return query.first()
         except Exception as ex:
+            print(ex)
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Parameters cannot be empty")
 
     @classmethod

@@ -67,8 +67,7 @@ def refresh_token(user: UserSchema = Depends(get_current_user), service: AuthSer
 @router.patch('/update-profile', response_model=UserGetSchema, response_description="Profile updated",
               status_code=status.HTTP_201_CREATED)
 def update_profile(form: UserUpdateSchema = Depends(), user: UserSchema = Depends(get_current_user)):
-    return AuthService.update_profile(pk=user.id, name=form.name, last_name=form.last_name,
-                                      anonymous_name=form.anonymous_name)
+    return AuthService.update_profile(pk=user.id, name=form.name, last_name=form.last_name)
 
 
 @router.put("/reset-password", response_description="Password successfully changed")
