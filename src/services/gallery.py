@@ -1,7 +1,9 @@
 from typing import List
 
 import sqlalchemy
-from fastapi import HTTPException, status, Response
+from fastapi import HTTPException, status
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 
 from core.database import Session
 from models.accounts import User
@@ -31,7 +33,7 @@ class GalleryService:
         try:
             if db.query(cls.model).filter_by(id=pk).delete():
                 db.commit()
-            return Response(status_code=status.HTTP_200_OK, content="Title successfully deleted")
+            return JSONResponse(status_code=status.HTTP_200_OK, content="Title successfully deleted")
         except Exception:
             raise HTTPException(detail="Gallery not found")
 
@@ -72,7 +74,7 @@ class GalleryService:
                     )
                     db.add(record)
                     db.commit()
-            return Response(status_code=status.HTTP_200_OK, content="Images successfully saved")
+            return JSONResponse(status_code=status.HTTP_200_OK, content="Images successfully saved")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Gallery title not found")
 
     @classmethod

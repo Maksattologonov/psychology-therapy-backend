@@ -1,7 +1,9 @@
 from typing import Optional
 
 import sqlalchemy
-from fastapi import UploadFile, File, HTTPException, status, Response
+from fastapi import UploadFile, File, HTTPException, status
+from fastapi.responses import JSONResponse
+
 
 from core.database import Session
 from models.accounts import User
@@ -102,7 +104,7 @@ class ArticleService:
         if user.is_superuser:
             if db.query(cls.model).filter_by(id=pk).delete():
                 db.commit()
-                return Response(
+                return JSONResponse(
                     status_code=status.HTTP_202_ACCEPTED,
                     content="Article successfully deleted"
                 )

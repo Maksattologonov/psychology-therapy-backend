@@ -32,7 +32,7 @@ async def get_gallery(
 
 @router.post("/create/")
 async def create_gallery(form: CreateGallerySchema = Depends(),
-                         image: List[UploadFile] = File(None),
+                         image: List[UploadFile] = File(...),
                          user: User = Depends(get_current_user),
                          db: Session = Depends(get_session),
                          service: GalleryService = Depends()):

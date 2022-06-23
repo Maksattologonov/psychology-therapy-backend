@@ -11,7 +11,6 @@ from starlette.responses import FileResponse
 from common.common import get_instance_slice
 from core.database import Session, get_session
 from models.accounts import User
-from models.forum import Forum, ImagesForum
 from schemas.forum import CreateForumSchema, ForumSchema, GetForumSchema, DeleteForumSchema, ImagesForumSchema, \
     UpdateForumSchema, CreateForumDiscussion, UpdateForumDiscussion, CatalogSchema, CreateCatalogSchema
 from services.accounts import get_current_user
