@@ -18,7 +18,7 @@ class GetArticleSchema(BaseModel):
     id: int
     title: str
     description: str
-    image: str
+    image: Optional[str]
 
     class Config:
         orm_mode = True

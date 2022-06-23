@@ -198,7 +198,6 @@ class AuthService:
                 conn.commit()
             return query.first()
         except Exception as ex:
-            print(ex)
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Parameters cannot be empty")
 
     @classmethod
