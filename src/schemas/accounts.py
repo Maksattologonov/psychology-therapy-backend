@@ -111,6 +111,7 @@ class GetEmployeeSchema(BaseModel):
     email: str
     name: str
     last_name: str
+    is_employee: bool
 
     class Config:
         orm_mode = True
@@ -136,3 +137,15 @@ class ResetPasswordSchema(BaseModel):
         if len(v) > 8:
             return v
         raise ValueError("Password must be more than 8 characters")
+
+
+class GetUserDataSchema(BaseModel):
+    id: int
+    email: str
+    name: str
+    last_name: str
+    is_student: bool
+    is_blocked: bool
+
+    class Config:
+        orm_mode = True

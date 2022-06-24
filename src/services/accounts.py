@@ -22,7 +22,7 @@ from jose import (
 )
 from schemas.accounts import (
     TokenSchema,
-    UserSchema, UserCreateSchema, GetEmployeeSchema, AdminCreateSchema
+    UserSchema, UserCreateSchema, GetEmployeeSchema, AdminCreateSchema, GetUserDataSchema
 )
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/auth/sign-in')
@@ -43,8 +43,8 @@ class AuthService:
     def get_users(cls, db: Session, user: UserSchema):
         schema = []
         if user.is_superuser:
-            for i in db.query(accounts.User).all():
-                schema.append(GetEmployeeSchema.from_orm(i))
+            for i in db.query(accounts.User).filter_by(is_student=True).all():
+                schema.append(GetUserDataSchema.from_orm(i))
             return schema
         else:
             raise HTTPException(detail="You don't have any permissions",
@@ -219,7 +219,7 @@ class AuthService:
 
     @classmethod
     def block_user(cls, user: UserSchema, db: Session, blocking_user: int):
-        if user.is_employee and not user.is_blocked:
+        if user.is_employee or user.is_superuser and not user.is_blocked:
             b_user = db.query(User).filter_by(id=blocking_user)
             if b_user.first() and not b_user.first().is_blocked:
                 b_user.update({"is_blocked": True})
@@ -231,7 +231,7 @@ class AuthService:
 
     @classmethod
     def unblock_user(cls, user: UserSchema, db: Session, blocking_user: int):
-        if user.is_employee and not user.is_blocked:
+        if user.is_employee or user.is_superuser and not user.is_blocked:
             b_user = db.query(User).filter_by(id=blocking_user)
             if b_user.first() and b_user.first().is_blocked:
                 b_user.update({"is_blocked": False})
