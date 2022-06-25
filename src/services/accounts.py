@@ -8,6 +8,8 @@ from email.message import EmailMessage
 from decouple import config
 from jinja2 import Template
 from starlette.responses import JSONResponse
+
+from common.exceptions import *
 from common.message import raw
 from models.accounts import VerificationCode, User
 from passlib.hash import bcrypt, des_crypt
@@ -22,7 +24,7 @@ from jose import (
 )
 from schemas.accounts import (
     TokenSchema,
-    UserSchema, UserCreateSchema, GetEmployeeSchema, AdminCreateSchema, GetUserDataSchema
+    UserSchema, UserCreateSchema, GetEmployeeSchema, AdminCreateSchema, GetUserDataSchema, EmployeeCreateSchema
 )
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/auth/sign-in')
@@ -35,6 +37,7 @@ def get_current_user(token: str = Depends(oauth2_scheme)) -> UserSchema:
 
 
 class AuthService:
+
     @classmethod
     def get_user(cls, **filters):
         return conn.query(accounts.User).filter_by(**filters).first()
@@ -47,8 +50,7 @@ class AuthService:
                 schema.append(GetUserDataSchema.from_orm(i))
             return schema
         else:
-            raise HTTPException(detail="You don't have any permissions",
-                                status_code=status.HTTP_406_NOT_ACCEPTABLE)
+            raise permission_exception
 
     @classmethod
     def get_employees(cls, db: Session, user_id: int):
@@ -61,8 +63,7 @@ class AuthService:
                     schema.append(GetEmployeeSchema.from_orm(i))
                 return schema
         except Exception:
-            raise HTTPException(detail="Employees not found",
-                                status_code=status.HTTP_404_NOT_FOUND)
+            raise not_found_exception("Employees")
 
     @classmethod
     def verify_password(cls, plain_password: str, hashed_password: str) -> bool:
@@ -74,13 +75,6 @@ class AuthService:
 
     @classmethod
     def validate_token(cls, token: str) -> UserSchema:
-        exception = HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail='could not  validate credentials',
-            headers={
-                'WWW-Authenticate': 'Bearer'
-            },
-        )
         try:
             payload = jwt.decode(
                 token,
@@ -88,12 +82,12 @@ class AuthService:
                 algorithms=[settings.jwt_algorithm],
             )
         except JWTError:
-            raise exception
+            raise not_validate
         user_data = payload.get('user')
         try:
             user = UserSchema.parse_obj(user_data)
         except ValidationError:
-            raise exception
+            raise not_validate
         return user
 
     @classmethod
@@ -118,10 +112,6 @@ class AuthService:
         self.session = session
 
     def register_user(self, user_data: UserCreateSchema):
-        exception = HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail='duplicate key value violates unique constraint',
-        )
         try:
             if user_data.is_employee:
                 user = accounts.User(
@@ -150,12 +140,9 @@ class AuthService:
                 )
                 self.session.add(user)
                 self.session.commit()
-            return JSONResponse(
-                status_code=status.HTTP_200_OK,
-                content="The account has been successfully registered, to use please go through verification"
-            )
+            return register_response
         except sqlalchemy.exc.IntegrityError:
-            raise exception
+            raise duplicate_exception
 
     def authenticate_user(self, email: str, password: str) -> TokenSchema:
         exception = HTTPException(
@@ -198,7 +185,7 @@ class AuthService:
                 conn.commit()
             return query.first()
         except Exception as ex:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Parameters cannot be empty")
+            raise empty_exception
 
     @classmethod
     def reset_password(cls, email: str, code: int, new_password: str, confirm_password: str):
@@ -209,13 +196,13 @@ class AuthService:
                     stmt = table.update().values(hashed_password=cls.hash_password(new_password))
                     conn.execute(stmt)
                     conn.commit()
-                    return HTTPException(status_code=status.HTTP_200_OK,
-                                         detail="Password was successfully change")
+                    return JSONResponse(status_code=status.HTTP_200_OK,
+                                        content="Password was successfully change")
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                                     detail="Passwords do not match")
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                                 detail="Wrong code")
-        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Request cannot be empty")
+        raise empty_exception
 
     @classmethod
     def block_user(cls, user: UserSchema, db: Session, blocking_user: int):
@@ -225,9 +212,9 @@ class AuthService:
                 b_user.update({"is_blocked": True})
                 db.commit()
                 return JSONResponse(status_code=status.HTTP_200_OK, content=f"Пользователь заблокирован")
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Пользователь не найден")
+            raise not_found_exception("User")
         else:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="У Вас не полномочий для удаления")
+            raise permission_exception
 
     @classmethod
     def unblock_user(cls, user: UserSchema, db: Session, blocking_user: int):
@@ -237,9 +224,9 @@ class AuthService:
                 b_user.update({"is_blocked": False})
                 db.commit()
                 return JSONResponse(status_code=status.HTTP_200_OK, content=f"Пользователь разблокирован")
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Пользователь не найден")
+            raise not_found_exception("User")
         else:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="У Вас не полномочий для разблокировки")
+            raise permission_exception
 
     def register_superuser(self, user_data: AdminCreateSchema):
         try:
@@ -254,19 +241,34 @@ class AuthService:
                     hashed_password=self.hash_password(user_data.password),
                     created_at=datetime.utcnow(),
                     updated_at=datetime.utcnow(),
-                    is_active=False
+                    is_active=True
                 )
                 self.session.add(user)
                 self.session.commit()
-                return JSONResponse(
-                    status_code=status.HTTP_200_OK,
-                    content="The account has been successfully registered, to use please go through verification"
-                )
+                return register_response
         except Exception:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail='duplicate key value violates unique constraint',
-            )
+            raise duplicate_exception
+
+    def register_employee(self, user: UserSchema, user_data: EmployeeCreateSchema):
+        try:
+            if user.is_superuser:
+                user = accounts.User(
+                    name=user_data.name,
+                    last_name=user_data.last_name,
+                    is_employee=True,
+                    email=user_data.email,
+                    hashed_password=self.hash_password(user_data.password),
+                    created_at=datetime.utcnow(),
+                    updated_at=datetime.utcnow(),
+                    is_active=True
+                )
+                self.session.add(user)
+                self.session.commit()
+                return register_response
+            else:
+                raise permission_exception
+        except Exception:
+            raise permission_exception
 
 
 class SendMessageWhenCreateUser:
@@ -328,7 +330,7 @@ class SendMessageWhenCreateUser:
                 status_code=status.HTTP_200_OK,
                 content="Message sent successfully"
             )
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        raise not_found_exception("User")
 
     @staticmethod
     def generate_code() -> int:

@@ -8,6 +8,7 @@ from models.appointments import TypeEnum, StatusEnum
 
 class CreateAppointmentSchema(BaseModel):
     phone_number: str
+    employee_id: int
     address: str
     status: StatusEnum
     type: TypeEnum
@@ -24,6 +25,7 @@ class UpdateAppointmentSchema(BaseModel):
 
 class GetAppointmentSchema(BaseModel):
     id: int
+    employee_id: int
     date_time: str
     phone_number: str
     address: str

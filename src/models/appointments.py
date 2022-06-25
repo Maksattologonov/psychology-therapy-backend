@@ -20,6 +20,7 @@ class Appointments(Base):
 
     id = Column(Integer, primary_key=True, index=True, unique=True)
     user_id = Column(Integer, ForeignKey('users.id'))
+    employee_id = Column(Integer, ForeignKey('users.id'))
     phone_number = Column(String(255))
     address = Column(String(255))
     status = Column(Integer)

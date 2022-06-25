@@ -8,7 +8,7 @@ from models.accounts import User
 from services.accounts import SendMessageWhenCreateUser, oauth2_scheme
 from schemas.accounts import (
     UserSchema, UserCreateSchema, TokenSchema, EmailSchema, VerifiedCodeSchema, BaseUserSchema, RefreshTokenSchema,
-    UserUpdateSchema, UserGetSchema, ResetPasswordSchema, AdminCreateSchema
+    UserUpdateSchema, UserGetSchema, ResetPasswordSchema, AdminCreateSchema, EmployeeCreateSchema
 )
 from services.accounts import AuthService, get_current_user
 
@@ -43,6 +43,15 @@ def sign_up(
     return service.register_superuser(user_data)
 
 
+@router.post('/create-employee', response_model=TokenSchema)
+def sign_up(
+        user: UserSchema = Depends(get_current_user),
+        user_data: EmployeeCreateSchema = Depends(),
+        service: AuthService = Depends()
+):
+    return service.register_employee(user=user, user_data=user_data)
+
+
 @router.get('/user', response_model=UserGetSchema)
 def get_user(user: UserSchema = Depends(get_current_user),
              service: AuthService = Depends()):
@@ -50,7 +59,7 @@ def get_user(user: UserSchema = Depends(get_current_user),
 
 
 @router.post('/send-email')
-async def send_email_asynchronous(response_model: EmailSchema):
+async def send_email(response_model: EmailSchema = Depends()):
     return await SendMessageWhenCreateUser.send_email_async(email=response_model.email)
 
 
@@ -71,7 +80,7 @@ def update_profile(form: UserUpdateSchema = Depends(), user: UserSchema = Depend
 
 
 @router.put("/reset-password", response_description="Password successfully changed")
-def reset_password(form: ResetPasswordSchema):
+def reset_password(form: ResetPasswordSchema = Depends()):
     return AuthService.reset_password(email=form.email, code=form.code, new_password=form.new_password,
                                       confirm_password=form.confirm_password)
 

@@ -4,6 +4,7 @@ import sqlalchemy
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+from common.exceptions import *
 
 from core.database import Session
 from models.accounts import User
@@ -19,14 +20,14 @@ class GalleryService:
         try:
             return db.query(cls.model).filter_by(**filters).first()
         except Exception:
-            raise HTTPException(detail="Gallery not found")
+            raise not_found_exception("Gallery")
 
     @classmethod
     async def filter(cls, db: Session, **filters):
         try:
             return db.query(cls.model).filter_by(**filters).all()
         except Exception:
-            raise HTTPException(detail="Gallery not found")
+            raise not_found_exception("Gallery")
 
     @classmethod
     async def delete(cls, db: Session, pk: int):
@@ -35,7 +36,7 @@ class GalleryService:
                 db.commit()
             return JSONResponse(status_code=status.HTTP_200_OK, content="Title successfully deleted")
         except Exception:
-            raise HTTPException(detail="Gallery not found")
+            raise not_found_exception("Gallery")
 
     @classmethod
     async def create_title(cls, db: Session, user: User, title: str, description: str):
@@ -48,16 +49,9 @@ class GalleryService:
                 db.add(record)
                 db.commit()
                 return record
-            exception = HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="could not validate credentials"
-            )
-            raise exception from None
+            raise not_validate from None
         except sqlalchemy.exc.IntegrityError:
-            raise HTTPException(
-                status_code=status.HTTP_406_NOT_ACCEPTABLE,
-                detail="Title already exists"
-            )
+            raise already_exist_exception("Title")
 
     @classmethod
     async def create(cls, db: Session, user: UserSchema, image_list: list, gallery_title_id: int):
@@ -75,12 +69,12 @@ class GalleryService:
                     db.add(record)
                     db.commit()
             return JSONResponse(status_code=status.HTTP_200_OK, content="Images successfully saved")
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Gallery title not found")
+        raise not_found_exception("Gallery")
 
     @classmethod
     async def get_images(cls, db: Session, **filters):
         try:
             return db.query(GalleryImages).filter_by(**filters).all()
         except Exception:
-            raise HTTPException(detail="Images not found", status_code=status.HTTP_400_BAD_REQUEST)
+            raise not_found_exception("Images")
 

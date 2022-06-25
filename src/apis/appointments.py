@@ -23,7 +23,8 @@ async def create_appointment(
         service: AppointmentService = Depends()
 ):
     return await service.create(db=db, phone_number=form.phone_number, address=form.address, a_status=form.status.value,
-                                date=form.date_time, typeof=form.type.value, user_id=user.id)
+                                date=form.date_time, typeof=form.type.value, user_id=user.id,
+                                employee_id=form.employee_id)
 
 
 @router.put("/update", response_model=GetAppointmentSchema, status_code=status.HTTP_201_CREATED)
@@ -38,10 +39,11 @@ async def update_appointment(
 
 @router.get("/get")
 async def get_appointment(
+        employee_id: int,
         db: Session = Depends(get_session),
         service: AppointmentService = Depends()
 ):
-    return await service.filter(db=db)
+    return await service.filter(employee_id=employee_id, db=db)
 
 
 @router.get("/get-own")

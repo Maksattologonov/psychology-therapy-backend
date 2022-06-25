@@ -49,6 +49,17 @@ class AdminCreateSchema(BaseModel):
         orm_mode = True
 
 
+class EmployeeCreateSchema(BaseModel):
+    name: str
+    last_name: str
+    email: str
+    _normalize_name = validator('email', allow_reuse=True)(must_be_manas_account)
+    password: str
+
+    class Config:
+        orm_mode = True
+
+
 class UserSchema(BaseModel):
     id: int
     email: str

@@ -3,6 +3,7 @@ from typing import Optional
 import sqlalchemy
 from fastapi import UploadFile, File, HTTPException, status
 from fastapi.responses import JSONResponse
+from common.exceptions import *
 
 
 from core.database import Session
@@ -40,16 +41,9 @@ class ArticleService:
                 db.add(record)
                 db.commit()
                 return record
-            exception = HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="could not validate credentials"
-            )
-            raise exception from None
+            raise not_validate from None
         except sqlalchemy.exc.IntegrityError:
-            raise HTTPException(
-                status_code=status.HTTP_406_NOT_ACCEPTABLE,
-                detail="Title already exists"
-            )
+            raise already_exist_exception("Title")
 
     @classmethod
     async def filter(cls, db: Session, pk: Optional[int] = None):
@@ -59,14 +53,14 @@ class ArticleService:
                 return query
         else:
             return db.query(cls.model).filter_by().all()
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Article not found")
+        raise not_found_exception("Article")
 
     @classmethod
     async def get(cls, db: Session, **filters):
         query = db.query(cls.model).filter_by(**filters).first()
         if query:
             return query
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Article not found")
+        raise not_found_exception("Article")
 
     @classmethod
     async def update_article(cls, user_id: int, db: Session, article_id: int, title: str,
@@ -89,18 +83,14 @@ class ArticleService:
                         query.update({"image": url})
                         db.commit()
                     return query.first()
-            raise HTTPException(detail="Article not found", status_code=status.HTTP_404_NOT_FOUND)
+            raise not_found_exception("Article")
         except sqlalchemy.exc.IntegrityError:
-            raise HTTPException(detail="Title already exists", status_code=status.HTTP_409_CONFLICT)
+            raise already_exist_exception("Title")
         except Exception as ex:
             raise HTTPException(detail="Something went wrong", status_code=status.HTTP_400_BAD_REQUEST)
 
     @classmethod
     def delete_article(cls, db: Session, pk: int, user: User):
-        exception = HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="you do not have permission to delete"
-        )
         if user.is_superuser:
             if db.query(cls.model).filter_by(id=pk).delete():
                 db.commit()
@@ -108,4 +98,4 @@ class ArticleService:
                     status_code=status.HTTP_202_ACCEPTED,
                     content="Article successfully deleted"
                 )
-        raise exception
+        raise permission_exception

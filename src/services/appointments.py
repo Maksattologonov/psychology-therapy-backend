@@ -6,6 +6,7 @@ from enum import Enum
 
 import sqlalchemy
 from typing import Optional
+from common.exceptions import *
 
 from decouple import config
 from fastapi import UploadFile, File, HTTPException, status
@@ -21,13 +22,15 @@ class AppointmentService:
     model = Appointments
 
     @classmethod
-    async def create(cls, db: Session, phone_number: str, address: str, a_status: int,
+    async def create(cls, db: Session, employee_id: int, phone_number: str, address: str, a_status: int,
                      user_id: User.id, typeof: int, date: str):
         try:
-            if date:
+            employee = db.query(User).filter_by(id=employee_id, is_employee=True).first()
+            if employee:
                 record = cls.model(
                     phone_number=phone_number,
                     address=address,
+                    employee_id=employee_id,
                     status=a_status,
                     type=typeof,
                     user_id=user_id,
@@ -36,6 +39,8 @@ class AppointmentService:
                 db.add(record)
                 db.commit()
                 return record
+            else:
+                raise not_found_exception("Employee")
         except sqlalchemy.exc.IntegrityError:
             raise HTTPException(
                 status_code=status.HTTP_406_NOT_ACCEPTABLE,
@@ -69,31 +74,25 @@ class AppointmentService:
                         db.commit()
                         db.commit()
                     return query.first()
-            raise HTTPException(detail="Appointment not found", status_code=status.HTTP_404_NOT_FOUND)
         except Exception as ex:
-            print(ex)
-            raise HTTPException(detail="Something went wrong", status_code=status.HTTP_400_BAD_REQUEST)
+            raise not_found_exception("User")
 
     @classmethod
     async def get(cls, db: Session, **filters):
         query = db.query(cls.model).filter_by(**filters).all()
         if query:
             return query
-        raise HTTPException(status_code=status.HTTP_200_OK, detail="Appointment not found")
+        raise not_found_exception("Appointment")
 
     @classmethod
     async def filter(cls, db: Session, **filters):
         query = db.query(cls.model).filter_by(**filters).all()
         if query:
             return query
-        raise HTTPException(status_code=status.HTTP_200_OK, detail="Appointment not found")
+        raise not_found_exception("Appointment")
 
     @classmethod
     async def delete(cls, db: Session, pk: int, user_id: User.id):
-        exception = HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Appointment not found"
-        )
         if pk:
             if db.query(cls.model).filter_by(id=pk).delete():
                 db.commit()
@@ -101,4 +100,4 @@ class AppointmentService:
                     status_code=status.HTTP_202_ACCEPTED,
                     detail="Appointment successfully deleted"
                 )
-            raise exception from None
+            raise not_found_exception("Appointment") from None

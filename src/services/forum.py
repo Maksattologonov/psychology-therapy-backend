@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload, aliased
+from common.exceptions import *
 
 from common.common import get_instance_slice
 from core.database import Session, get_session
@@ -24,20 +25,14 @@ class CatalogService:
     async def get(cls, db: Session, **filters):
         query = db.query(cls.model).filter_by(**filters).first()
         if not query:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail='Catalog not found'
-            )
+            raise not_found_exception("Catalog")
         return await query
 
     @classmethod
     async def filter(cls, db: Session, **filters):
         query = db.query(cls.model).filter_by(**filters).all()
         if not query:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail='Catalog`s not found'
-            )
+            raise not_found_exception("Catalogs")
         return query
 
     @classmethod
@@ -48,14 +43,10 @@ class CatalogService:
             db.commit()
             return record
         except Exception:
-            raise HTTPException(detail="Bad credentials", status_code=status.HTTP_400_BAD_REQUEST)
+            raise bad_credentials
 
     @classmethod
     def delete(cls, **filters):
-        exception = HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Catalog not found"
-        )
         if filters:
             if conn.query(cls.model).filter_by(**filters).delete():
                 conn.commit()
@@ -63,7 +54,7 @@ class CatalogService:
                     status_code=status.HTTP_202_ACCEPTED,
                     detail="Catalog successfully deleted"
                 )
-            raise exception from None
+            raise not_found_exception("Catalog") or None
 
 
 class ForumService:
@@ -74,10 +65,7 @@ class ForumService:
     def get(cls, **filters):
         query = conn.query(cls.model).filter_by(**filters).first()
         if not query:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail='Forum not found'
-            )
+            raise not_found_exception("Forum")
         return query
 
     @classmethod
@@ -93,10 +81,7 @@ class ForumService:
                                 "updated_at": i.updated_at, "created_at": i.created_at,
                                 "images": instance, "comments": discussions})
             return JSONResponse(content=jsonable_encoder(request[instance_slice]))
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail='Forums not found'
-        )
+        raise not_found_exception("Forum")
 
     @classmethod
     def get_image(cls, db: Session, **filters):
@@ -104,10 +89,7 @@ class ForumService:
 
     @classmethod
     def delete_forum(cls, **filters):
-        exception = HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Forum not found"
-        )
+        exception = not_found_exception("Forum")
         if filters:
             if conn.query(cls.model).filter_by(**filters).delete():
                 conn.commit()
@@ -130,10 +112,7 @@ class ForumService:
             conn.commit()
             return record
         except Exception:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Bad credentials"
-            )
+            raise bad_credentials
 
     @classmethod
     async def create(cls, db: Session, catalog_id: int, title: str, description: str, user_id: int,
@@ -153,20 +132,10 @@ class ForumService:
                     if image:
                         await cls.save_image(image=image, title=title)
                     return record
-                exception = HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="could not validate credentials"
-                )
-                raise exception from None
+                raise bad_credentials from None
             except sqlalchemy.exc.IntegrityError:
-                raise HTTPException(
-                    status_code=status.HTTP_406_NOT_ACCEPTABLE,
-                    detail="Title already exists"
-                )
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Catalog not found"
-        )
+                raise already_exist_exception("Title")
+        raise not_found_exception("Catalog")
 
     @classmethod
     async def save_image(cls, title: str, image: Optional[UploadFile] = File(None)):
@@ -206,9 +175,9 @@ class ForumService:
                         record.update({'images': url})
                         db.commit()
                     return query.first()
-            raise HTTPException(detail="Forum not found", status_code=status.HTTP_404_NOT_FOUND)
+            raise not_found_exception("Forum")
         except sqlalchemy.exc.IntegrityError:
-            raise HTTPException(detail="Title already exists", status_code=status.HTTP_409_CONFLICT)
+            raise already_exist_exception("Title")
         except Exception as ex:
             raise HTTPException(detail="Something went wrong", status_code=status.HTTP_400_BAD_REQUEST)
 
@@ -221,7 +190,7 @@ class ForumDiscussionService:
         try:
             return db.query(cls.model).filter_by(**filters).first()
         except Exception as ex:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Discussion not found")
+            raise not_found_exception("Discussion")
 
     @classmethod
     def filter(cls, db: Session, **filters):
@@ -232,7 +201,7 @@ class ForumDiscussionService:
                 cls.model.user_id == User.id) \
                 .filter_by(**filters).all()
         except Exception as ex:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Discussions not found")
+            raise not_found_exception("Discussion")
 
     @classmethod
     async def create(cls, db: Session, forum_id: int, description: str, user: User):
@@ -246,9 +215,7 @@ class ForumDiscussionService:
                 db.add(record)
                 db.commit()
                 return record
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="could not validate credentials")
+            raise not_validate
         else:
             raise bad_exception
 
@@ -263,6 +230,6 @@ class ForumDiscussionService:
                         db.commit()
                     return HTTPException(status_code=status.HTTP_200_OK, detail="Update has been successfully")
                 raise bad_exception
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment not found")
+            raise not_found_exception("Comment")
         except Exception as ex:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User can't edit foreign comment")
+            raise permission_exception
