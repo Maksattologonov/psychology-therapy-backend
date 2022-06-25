@@ -21,7 +21,7 @@ router = APIRouter(
 
 @router.post('/sign-up', response_model=TokenSchema)
 def sign_up(
-        user_data: UserCreateSchema = Depends(),
+        user_data: UserCreateSchema,
         service: AuthService = Depends()
 ):
     return service.register_user(user_data)
@@ -59,12 +59,12 @@ def get_user(user: UserSchema = Depends(get_current_user),
 
 
 @router.post('/send-email')
-async def send_email(response_model: EmailSchema = Depends()):
+async def send_email(response_model: EmailSchema):
     return await SendMessageWhenCreateUser.send_email_async(email=response_model.email)
 
 
 @router.post('/verified-account', response_model=TokenSchema)
-def verified_account(form_data: VerifiedCodeSchema = Depends(), service: SendMessageWhenCreateUser = Depends()):
+def verified_account(form_data: VerifiedCodeSchema, service: SendMessageWhenCreateUser = Depends()):
     return service.activate_user(email=form_data.email, code=form_data.code)
 
 
