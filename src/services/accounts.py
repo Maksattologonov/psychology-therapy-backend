@@ -113,33 +113,18 @@ class AuthService:
 
     def register_user(self, user_data: UserCreateSchema):
         try:
-            if user_data.is_employee:
-                user = accounts.User(
-                    name=user_data.name,
-                    last_name=user_data.last_name,
-                    is_employee=user_data.is_employee,
-                    is_student=False,
-                    email=user_data.email,
-                    hashed_password=self.hash_password(user_data.password),
-                    created_at=datetime.utcnow(),
-                    updated_at=datetime.utcnow(),
-                    is_active=False
-                )
-                self.session.add(user)
-                self.session.commit()
-            else:
-                user = accounts.User(
-                    name=user_data.name,
-                    last_name=user_data.last_name,
-                    is_employee=user_data.is_employee,
-                    email=user_data.email,
-                    hashed_password=self.hash_password(user_data.password),
-                    created_at=datetime.utcnow(),
-                    updated_at=datetime.utcnow(),
-                    is_active=False
-                )
-                self.session.add(user)
-                self.session.commit()
+            user = accounts.User(
+                name=user_data.name,
+                last_name=user_data.last_name,
+                is_student=True,
+                email=user_data.email,
+                hashed_password=self.hash_password(user_data.password),
+                created_at=datetime.utcnow(),
+                updated_at=datetime.utcnow(),
+                is_active=False
+            )
+            self.session.add(user)
+            self.session.commit()
             return register_response
         except sqlalchemy.exc.IntegrityError:
             raise duplicate_exception

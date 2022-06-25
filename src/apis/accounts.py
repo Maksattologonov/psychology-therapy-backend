@@ -64,7 +64,7 @@ async def send_email(response_model: EmailSchema = Depends()):
 
 
 @router.post('/verified-account', response_model=TokenSchema)
-def verified_account(form_data: VerifiedCodeSchema, service: SendMessageWhenCreateUser = Depends()):
+def verified_account(form_data: VerifiedCodeSchema = Depends(), service: SendMessageWhenCreateUser = Depends()):
     return service.activate_user(email=form_data.email, code=form_data.code)
 
 

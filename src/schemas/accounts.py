@@ -22,7 +22,6 @@ class BaseUserSchema(BaseModel):
 class UserCreateSchema(BaseModel):
     name: str
     last_name: str
-    is_employee: Optional[bool] = False
     email: str
     _normalize_name = validator('email', allow_reuse=True)(must_be_manas_account)
     password: str
