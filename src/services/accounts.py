@@ -39,8 +39,12 @@ def get_current_user(token: str = Depends(oauth2_scheme)) -> UserSchema:
 class AuthService:
 
     @classmethod
-    def get_user(cls, **filters):
-        return conn.query(accounts.User).filter_by(**filters).first()
+    def get_user(cls, user: UserSchema, db: Session, **filters):
+        if user:
+            instance = db.query(accounts.User).filter_by(id=user.id).first()
+            return instance
+        else:
+            raise not_found_exception("User")
 
     @classmethod
     def get_users(cls, db: Session, user: UserSchema):

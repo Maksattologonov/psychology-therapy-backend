@@ -8,7 +8,7 @@ from models.accounts import User
 from services.accounts import SendMessageWhenCreateUser, oauth2_scheme
 from schemas.accounts import (
     UserSchema, UserCreateSchema, TokenSchema, EmailSchema, VerifiedCodeSchema, BaseUserSchema, RefreshTokenSchema,
-    UserUpdateSchema, UserGetSchema, ResetPasswordSchema, AdminCreateSchema, EmployeeCreateSchema
+    UserUpdateSchema, UserGetSchema, ResetPasswordSchema, AdminCreateSchema, EmployeeCreateSchema, GetUserDataSchema
 )
 from services.accounts import AuthService, get_current_user
 
@@ -52,10 +52,11 @@ def sign_up(
     return service.register_employee(user=user, user_data=user_data)
 
 
-@router.get('/user', response_model=UserGetSchema)
+@router.get('/user', response_model=GetUserDataSchema)
 def get_user(user: UserSchema = Depends(get_current_user),
+             db: Session = Depends(get_session),
              service: AuthService = Depends()):
-    return service.get_user(id=user.id)
+    return service.get_user(user=user, db=db)
 
 
 @router.post('/send-email')

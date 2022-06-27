@@ -155,6 +155,8 @@ class GetUserDataSchema(BaseModel):
     name: str
     last_name: str
     is_student: bool
+    is_employee: bool
+    is_superuser: bool
     is_blocked: bool
 
     class Config:
