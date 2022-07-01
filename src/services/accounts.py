@@ -155,7 +155,7 @@ class AuthService:
         return self.create_token(user)
 
     def refresh_token(self, pk: int) -> TokenSchema:
-        user = self.get_user(id=pk)
+        user = conn.query(User).filter_by(id=pk).first()
         if user:
             return self.create_token(user)
         exception = HTTPException(status_code=status.HTTP_404_NOT_FOUND,
