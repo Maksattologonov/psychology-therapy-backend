@@ -40,11 +40,14 @@ class AuthService:
 
     @classmethod
     def get_user(cls, user: UserSchema, db: Session, **filters):
-        if user:
-            instance = db.query(accounts.User).filter_by(id=user.id).first()
-            return instance
-        else:
-            raise not_found_exception("User")
+        try:
+            if user:
+                instance = db.query(accounts.User).filter_by(id=user.id).first()
+                return instance
+            else:
+                raise not_found_exception("User")
+        except Exception:
+            raise bad_credentials
 
     @classmethod
     def get_users(cls, db: Session, user: UserSchema):
@@ -294,7 +297,6 @@ class SendMessageWhenCreateUser:
 
     @classmethod
     def create_record(cls, user: str, code: int):
-        email = AuthService.get_user(email=user)
         query = cls.model(user=user, code=code)
         conn.add(query)
         conn.commit()
